@@ -80,7 +80,7 @@ export async function fetchDistricts(osmId: number): Promise<DistrictSet[]> {
   const polys = fc.features.filter((f) => f.geometry && /Polygon/.test(f.geometry.type) && String(f.id ?? (f.properties as { id?: string })?.id ?? "").startsWith("relation"));
   const byLevel = new Map<string, GeoJSON.Feature[]>();
   for (const f of polys) {
-    const p = f.properties as { admin_level?: string; tags?: Record<string, string> }; const lvl = String(p.tags?.admin_level ?? p.admin_level ?? "");
+    const p = f.properties as { admin_level?: string; tags?: Record<string, string> }; const lvl = String(p.tags?.['admin_level'] ?? p.admin_level ?? "");
     byLevel.set(lvl, [...(byLevel.get(lvl) ?? []), f]);
   }
   return [...byLevel.entries()].filter(([, fs]) => fs.length >= 2).sort((a, b) => a[0].localeCompare(b[0]))
@@ -89,5 +89,5 @@ export async function fetchDistricts(osmId: number): Promise<DistrictSet[]> {
 
 export function districtName(f: GeoJSON.Feature): string {
   const p = (f.properties ?? {}) as { name?: string; tags?: Record<string, string> };
-  return p.tags?.name ?? p.name ?? "?";
+  return p.tags?.['name'] ?? p.name ?? "?";
 }
