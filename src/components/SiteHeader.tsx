@@ -13,6 +13,7 @@ export function SiteHeader() {
         </Link>
         <nav className="flex gap-1 text-sm">
           <Link to="/" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }} activeOptions={{ exact: true }}>{tx.map}</Link>
+          <Link to="/staedte" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }}>{lang === "en" ? "Other cities" : "Andere Städte"}</Link>
           <Link to="/quellen" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }}>{tx.sources}</Link>
           <div className="ml-2 flex overflow-hidden rounded-sm border" role="group" aria-label="Sprache / Language">
             {(["de", "en"] as const).map((l) => (
