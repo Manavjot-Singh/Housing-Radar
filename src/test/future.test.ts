@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { evaluate, futureBlocks, type FutureBlock } from "@/lib/future";
 
-const base: FutureBlock = { id: "X|1|1", d: "Bockelsberg", ew: 100, living: 45, vac: 8, cover: 6, freeHa: 10, exclPct: 0, excl: {}, g: { type: "Point", coordinates: [0, 0] } };
+const base: FutureBlock = { id: "X|1|1", d: "Bockelsberg", ew: 100, living: 45, vac: 8, cover: 6, freeHa: 10, fnpHa: 0, resHa: 0, farmPct: 0, rg: null, exclPct: 0, excl: {}, g: { type: "Point", coordinates: [0, 0] } };
 const t = { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false };
 
 describe("future development screen", () => {
