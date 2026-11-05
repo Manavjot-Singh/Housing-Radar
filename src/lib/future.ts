@@ -8,7 +8,9 @@ export type FutureBlock = {
   freeHa: number; fnpHa: number; resHa: number; farmPct: number; rg: GeoJSON.Geometry | null; exclPct: number; excl: Partial<Record<ExclKey, number>>;
   g: GeoJSON.Geometry | null;
 };
-export const futureBlocks = zukunft as unknown as FutureBlock[];
+export let futureBlocks = zukunft as unknown as FutureBlock[];
+/** null restores Lüneburg. */
+export function setFutureBlocks(b: unknown[] | null) { futureBlocks = (b ?? zukunft) as FutureBlock[]; }
 
 export type Thresholds = { living: number; vacancy: number; coverage: number; onlyPlanned: boolean };
 export const DEFAULT_THRESHOLDS: Thresholds = { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false };

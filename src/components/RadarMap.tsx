@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type * as L from "leaflet";
-import gitter from "@/data/gitter.json";
-import versorgung from "@/data/versorgung.json";
 import { t } from "@/lib/i18n";
 import {
-  blockOf, blockOwn, commercial, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
-  type Cell, type Condition, type District, type Indicator,
+  amenityPoints, gridCells, cityName, blockOf, blockOwn, commercial, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
+  type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
 export type { AmenityKey } from "@/lib/radar";
@@ -21,8 +19,6 @@ type Props = {
   onSelect: (name: string) => void;
 };
 
-const cells = gitter as unknown as Cell[];
-const points = versorgung as Record<AmenityKey, [number, number][]>;
 
 function cssVar(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -102,7 +98,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
     if (detail) {
       const grp = Lf.layerGroup();
       const dLat = 0.00045, dLon = 0.00075;
-      for (const c of cells) {
+      for (const c of gridCells) {
         const b = blockOf(c);
         const shown = (k: Indicator) => (zoomed ? cellValue(c, k) : b ? blockValueOf(b, k) : null);
         const own = (k: Indicator) => (zoomed ? cellOwn(c, k) : b ? blockOwn(b, k) : null);
@@ -168,7 +164,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
     const pg = Lf.layerGroup();
     (Object.keys(amenities) as AmenityKey[]).forEach((k) => {
       if (!amenities[k]) return;
-      for (const [lon, lat] of points[k]) {
+      for (const [lon, lat] of amenityPoints[k] ?? []) {
         Lf.circleMarker([lat, lon], {
           radius: k === "pt" ? 3 : 5, color: fg, weight: 1, fillColor: AMENITY_COLOR[k](), fillOpacity: 1,
         }).bindTooltip(`${(lang === "en" ? iconEn : icon)[k]} · ${tx.amenity[k]}`).addTo(pg);
@@ -188,7 +184,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
 
   return (
     <div className="relative h-full w-full">
-      <div ref={el} className="h-full w-full" aria-label={lang === "en" ? "Map of Lüneburg districts" : "Karte der Lüneburger Stadtteile"} />
+      <div ref={el} className="h-full w-full" aria-label={lang === "en" ? `Map of ${cityName} districts` : `Karte der Stadtteile von ${cityName}`} />
       {unit && (
         <div className="pointer-events-none absolute right-2 top-2 z-[400] rounded-sm border bg-card/95 px-2 py-1 font-mono text-xs">
           {unit === "block" ? t[lang].showingBlock : t[lang].showingCell}

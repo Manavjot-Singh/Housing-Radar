@@ -1,16 +1,26 @@
+import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
+import { applyCity, currentCity, restoreCity, useCityKey } from "@/lib/city";
 import { useLang, t } from "@/lib/i18n";
 
 export function SiteHeader() {
   const [lang, setLang] = useLang();
   const tx = t[lang];
+  useCityKey();
+  useEffect(() => { void restoreCity(); }, []);
+  const other = currentCity();
   return (
     <header className="border-b bg-card">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
         <Link to="/" className="flex items-baseline gap-3">
           <span className="font-display text-2xl font-bold uppercase text-primary">Housing Radar</span>
-          <span className="kicker hidden sm:inline">{tx.city}</span>
+          <span className="kicker hidden sm:inline">{other ? other.name : tx.city}</span>
         </Link>
+        {other && (
+          <button onClick={() => applyCity(null)} className="rounded-sm border px-2 py-1 text-xs hover:bg-muted">
+            {lang === "en" ? "Back to Lüneburg" : "Zurück zu Lüneburg"}
+          </button>
+        )}
         <nav className="flex gap-1 text-sm">
           <Link to="/" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }} activeOptions={{ exact: true }}>{tx.map}</Link>
           <Link to="/gemeinde" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }}>{lang === "en" ? "Other town" : "Andere Gemeinde"}</Link>

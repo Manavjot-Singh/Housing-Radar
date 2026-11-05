@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -6,7 +6,8 @@ import { MunicipalityMap } from "@/components/MunicipalityMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLang } from "@/lib/i18n";
-import { loadMunicipality, searchMunicipality } from "@/lib/municipality.functions";
+import { applyCity, type CityData } from "@/lib/city";
+import { buildCityData, loadMunicipality, searchMunicipality } from "@/lib/municipality.functions";
 import type { MunicipalityResult } from "@/lib/municipality";
 
 export const Route = createFileRoute("/gemeinde")({
@@ -30,6 +31,9 @@ function Gemeinde() {
   const en = lang === "en";
   const load = useServerFn(loadMunicipality);
   const search = useServerFn(searchMunicipality);
+  const build = useServerFn(buildCityData);
+  const navigate = useNavigate();
+  const [busyDash, setBusyDash] = useState(false);
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [pick, setPick] = useState<Hit | null>(null);
@@ -53,6 +57,17 @@ function Gemeinde() {
     try { setData(await load({ data: { osmId: pick.osmId, ags: pick.ags, name: pick.name } })); }
     catch (x) { setErr((en ? "Loading failed: " : "Laden fehlgeschlagen: ") + (x instanceof Error ? x.message : "")); }
     finally { setBusy(null); }
+  };
+
+  const toDashboard = async () => {
+    if (!pick) return;
+    setBusyDash(true); setErr(null);
+    try {
+      const c = JSON.parse(await build({ data: { osmId: pick.osmId, ags: pick.ags, name: pick.name } })) as CityData;
+      applyCity(c);
+      await navigate({ to: "/" });
+    } catch (x) { setErr((en ? "Building the dashboard failed: " : "Dashboard konnte nicht erstellt werden: ") + (x instanceof Error ? x.message : "")); }
+    finally { setBusyDash(false); }
   };
 
   const cards: [string, string][] = data ? [
@@ -96,9 +111,14 @@ function Gemeinde() {
                     </li>
                   ))}
                 </ul>
-                <Button onClick={proceed} disabled={!pick || busy !== null}>
-                  {busy === "load" ? (en ? "Loading data… (up to 1 min)" : "Lade Daten… (bis zu 1 Min.)") : pick ? (en ? `Proceed with ${pick.name}` : `Weiter mit ${pick.name}`) : en ? "Choose a municipality" : "Gemeinde wählen"}
+                <div className="flex flex-wrap gap-2">
+                <Button onClick={toDashboard} disabled={!pick || busy !== null || busyDash}>
+                  {busyDash ? (en ? "Building dashboard… (up to 2 min)" : "Erstelle Dashboard… (bis zu 2 Min.)") : pick ? (en ? `Open dashboard for ${pick.name}` : `Dashboard für ${pick.name} öffnen`) : en ? "Choose a municipality" : "Gemeinde wählen"}
                 </Button>
+                <Button variant="outline" onClick={proceed} disabled={!pick || busy !== null || busyDash}>
+                  {busy === "load" ? (en ? "Loading data… (up to 1 min)" : "Lade Daten… (bis zu 1 Min.)") : en ? "Only protected areas & buildings" : "Nur Schutzgebiete & Gebäude"}
+                </Button>
+                </div>
               </div>
         )}
 

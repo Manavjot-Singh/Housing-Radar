@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import "leaflet/dist/leaflet.css";
+import { hasFnp } from "@/lib/radar";
 import { evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
 
 const EXCL_LABEL: Record<ExclKey, { de: string; en: string }> = {
@@ -58,7 +59,7 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
         line(e.vacancy, en ? "Vacancy" : "Leerstand", "%", `≤ ${th.vacancy}`, en),
         line(e.coverage, en ? "Building coverage" : "Bebauung", "%", `≤ ${th.coverage}`, en),
         `${en ? "Remaining area" : "Verbleibende Fläche"}: ${num(blk.freeHa, en)} ha`,
-        `${en ? "Land-use plan (FNP) housing/mixed land" : "Im Flächennutzungsplan Wohn-/Mischbaufläche"}: ${num(blk.fnpHa, en)} ha${blk.resHa ? ` · ${en ? "still unbuilt" : "davon noch unbebaut"}: ${num(blk.resHa, en)} ha` : ""}`,
+        !hasFnp ? "" : `${en ? "Land-use plan (FNP) housing/mixed land" : "Im Flächennutzungsplan Wohn-/Mischbaufläche"}: ${num(blk.fnpHa, en)} ha${blk.resHa ? ` · ${en ? "still unbuilt" : "davon noch unbebaut"}: ${num(blk.resHa, en)} ha` : ""}`,
         blk.farmPct ? `${en ? "Farmland share" : "Anteil Acker"}: ${blk.farmPct} %` : "",
         excl ? `${en ? "Excluded" : "Abgezogen"}: ${excl}` : "",
       ].filter(Boolean).join("<br>");
@@ -119,7 +120,7 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
       <div ref={el} className="h-[460px] w-full rounded-md" aria-label={en ? "Future development screening map" : "Karte zur Prüfung möglicher Entwicklungsflächen"} />
       <div className="pointer-events-none absolute bottom-2 left-2 z-[500] max-w-[70%] rounded-sm border bg-card/95 px-2 py-1.5 text-[11px] leading-tight">
         <p className="font-semibold">{en ? "Legend" : "Legende"}</p>
-        {legend.filter((x) => !x.onlyWithFocus || hasFocus).map((x) => (
+        {legend.filter((x) => (!x.onlyWithFocus || hasFocus) && (hasFnp || !x.de.startsWith("Wohnbaufläche"))).map((x) => (
           <p key={x.de} className="mt-1 flex items-center gap-1.5">
             <span aria-hidden className="inline-block h-3 w-4 shrink-0 rounded-[2px]" style={x.swatch} />
             <span>{en ? x.en : x.de}</span>

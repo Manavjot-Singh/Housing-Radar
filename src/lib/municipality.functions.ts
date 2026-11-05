@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
+import { buildCity } from "./cityBuild";
 import { analyse, centroid, geojsonToPolys, parseAlkisGml, polyAreaM2, polyBBox, type Building, type Poly } from "./municipality";
 
 const UA = { "User-Agent": "HousingRadar/1.0 (Leuphana hackathon demo)" };
@@ -74,4 +76,15 @@ export const searchMunicipality = createServerFn({ method: "POST" })
       hits.push({ osmId: x.osm_id, name: x.name, label: x.display_name, ags });
     }
     return hits;
+  });
+
+/** Builds the full dashboard data set for a town (census tiles + OSM + NLWKN + ALKIS). */
+export const buildCityData = createServerFn({ method: "POST" })
+  .inputValidator((d: { osmId: number; ags: string; name: string }) => {
+    if (!Number.isInteger(d.osmId) || !/^03\d{6}$/.test(d.ags)) throw new Error("Nur Gemeinden in Niedersachsen");
+    return { osmId: d.osmId, ags: d.ags, name: String(d.name).slice(0, 120) };
+  })
+  .handler(async ({ data }) => {
+    const origin = new URL(getRequest().url).origin;
+    return JSON.stringify(await buildCity({ ...data, origin }));
   });
