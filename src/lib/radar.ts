@@ -1,4 +1,5 @@
 import blocke from "@/data/blocke.json";
+import gewerbe from "@/data/gewerbe.json";
 import stadtteile from "@/data/stadtteile.json";
 import summary from "@/data/summary.json";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -23,17 +24,42 @@ export type District = {
   abdeckungRaeume: number;
   efhAnteil: number | null;
   versorgung: number | null;
+  gewerbeLeerstand: number | null;
 };
 
-export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "anteil65" | "efhAnteil" | "raeumeProKopf" | "versorgung" | "bebautAnteil" | "einwohnerJeGebaeude";
+export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "anteil65" | "efhAnteil" | "raeumeProKopf" | "versorgung" | "gewerbeLeerstand" | "bebautAnteil" | "einwohnerJeGebaeude";
 
-type DistrictProps = Omit<District, "einwohnerJeGebaeude">;
+type DistrictProps = Omit<District, "einwohnerJeGebaeude" | "gewerbeLeerstand">;
 
 export const geo = stadtteile as unknown as FeatureCollection<Geometry, DistrictProps>;
+
+// ============= Commercial vacancy (LeAn extract) =============
+/** Street: [name, lon, lat, objects, vacant, at risk, reuse agreed] – built by scripts/prepare_gewerbe.py. */
+export type CommercialStreet = [string, number, number, number, number, number, number];
+export const commercial = gewerbe as unknown as CommercialStreet[];
+/** The LeAn extract only covers Altstadt shopping streets; elsewhere commercial vacancy is unknown, not zero. */
+export const COMMERCIAL_DISTRICT = "Altstadt";
+const commercialTotal = commercial.reduce((s, x) => s + x[4] + x[5], 0);
+
+function metres(lon1: number, lat1: number, lon2: number, lat2: number) {
+  const dx = (lon1 - lon2) * 66600, dy = (lat1 - lat2) * 111200;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+/** Vacant + at-risk commercial units within `radius` m, or null outside the area the extract covers. */
+export function commercialNear(lon: number, lat: number, radius: number, covered = radius + 150): number | null {
+  let n = 0, near = false;
+  for (const s of commercial) {
+    const d = metres(lon, lat, s[1], s[2]);
+    if (d <= covered) near = true;
+    if (d <= radius) n += s[4] + s[5];
+  }
+  return near ? n : null;
+}
 
 export const districts: District[] = geo.features.map((f) => ({
   ...f.properties,
   einwohnerJeGebaeude: f.properties.gebaeude > 0 ? f.properties.einwohner / f.properties.gebaeude : 0,
+  gewerbeLeerstand: f.properties.name === COMMERCIAL_DISTRICT ? commercialTotal : null,
 }));
 
 export const districtByName = new Map(districts.map((d) => [d.name, d]));
@@ -86,6 +112,11 @@ export const indicators: Record<
     unit: "/ 3", breaks: [0.5, 1.5, 2.5, 99], decimals: 1, gridSource: true, gridIndex: 8, legend: ["0", "1", "2", "3", ""],
     hint: "Wie viele von drei Angeboten zu Fuß erreichbar sind: Supermarkt (600 m), Arztpraxis (600 m), Bus-/Bahnhalt (400 m).",
   },
+  gewerbeLeerstand: {
+    label: "Gewerbeleerstand", labelEn: "Commercial vacancy", hintEn: "Vacant or soon-to-be-vacant shops and commercial units within 250 m (LeAn extract, Altstadt shopping streets only – no data elsewhere).",
+    unit: "Obj.", breaks: [0.5, 0.9, 1, 3], decimals: 0, gridSource: true, legend: ["0", "", "", "1–2", "≥ 3"],
+    hint: "Leerstehende oder bald leerstehende Läden und Gewerbeflächen im Umkreis von 250 m (LeAn-Auszug, nur Altstadt-Einkaufsstraßen – anderswo keine Angabe).",
+  },
   bebautAnteil: {
     label: "Bebauungsdichte", labelEn: "Building density", hintEn: "Share of district area covered by building footprints.",
     unit: "%",
@@ -122,6 +153,7 @@ export type Cell = [number, number, number | null, number | null, number | null,
 
 /** The cell's own value, or null when the census publishes none (or the indicator only exists per district). */
 export function cellOwn(c: Cell, ind: Indicator): number | null {
+  if (ind === "gewerbeLeerstand") return c[9] === COMMERCIAL_DISTRICT ? commercialNear(c[0], c[1], 250) : null;
   const i = indicators[ind].gridIndex;
   return i == null ? null : (c[i] as number | null);
 }
@@ -155,6 +187,11 @@ export function blockOf(c: Cell): Block | null {
 
 /** The block's own value, or null when no cell in it carries one. */
 export function blockOwn(b: Block, ind: Indicator): number | null {
+  if (ind === "gewerbeLeerstand") {
+    if (b[10] !== COMMERCIAL_DISTRICT) return null;
+    const [, ix, iy] = b[0].split("|").map(Number);
+    return commercialNear(BLOCK_LON0 + (ix! + 0.5) * BLOCK_DLON, BLOCK_LAT0 + (iy! + 0.5) * BLOCK_DLAT, 400);
+  }
   const i = indicators[ind].gridIndex;
   return i == null ? null : (b[i - 1] as number | null);
 }
