@@ -94,5 +94,38 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
 
   useEffect(restyle, [t, lang, focus]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div ref={el} className="h-[460px] w-full rounded-md" aria-label={en ? "Future development screening map" : "Karte zur Prüfung möglicher Entwicklungsflächen"} />;
+  const hasFocus = focus instanceof Set && focus.size > 0;
+
+  const legend: { swatch: React.CSSProperties; de: string; en: string; onlyWithFocus?: boolean }[] = [
+    {
+      swatch: { background: "rgba(22,163,74,.75)", border: "2px solid #b91c1c" },
+      de: "Erfüllt alle Bedingungen · empfohlener Randbereich",
+      en: "Meets all conditions · suggested edge area",
+      onlyWithFocus: true,
+    },
+    { swatch: { background: "rgba(34,197,94,.4)", border: "1px solid #14532d" }, de: "Erfüllt alle Bedingungen", en: "Meets all conditions" },
+    {
+      swatch: { background: "rgba(252,165,165,.35)", border: "2px solid #b91c1c" },
+      de: "Empfohlener Randbereich · erfüllt nicht alle Bedingungen",
+      en: "Suggested edge area · does not meet all conditions",
+      onlyWithFocus: true,
+    },
+    { swatch: { background: "rgba(59,130,246,.45)", border: "1px dashed #1d4ed8" }, de: "Wohnbaufläche im Flächennutzungsplan, noch unbebaut", en: "Housing land in the land-use plan, still unbuilt" },
+    { swatch: { background: "rgba(148,163,184,.08)", border: "1px solid #64748b" }, de: "Erfüllt die Bedingungen nicht", en: "Does not meet the conditions" },
+  ];
+
+  return (
+    <div className="relative">
+      <div ref={el} className="h-[460px] w-full rounded-md" aria-label={en ? "Future development screening map" : "Karte zur Prüfung möglicher Entwicklungsflächen"} />
+      <div className="pointer-events-none absolute bottom-2 left-2 z-[500] max-w-[70%] rounded-sm border bg-card/95 px-2 py-1.5 text-[11px] leading-tight">
+        <p className="font-semibold">{en ? "Legend" : "Legende"}</p>
+        {legend.filter((x) => !x.onlyWithFocus || hasFocus).map((x) => (
+          <p key={x.de} className="mt-1 flex items-center gap-1.5">
+            <span aria-hidden className="inline-block h-3 w-4 shrink-0 rounded-[2px]" style={x.swatch} />
+            <span>{en ? x.en : x.de}</span>
+          </p>
+        ))}
+      </div>
+    </div>
+  );
 }
