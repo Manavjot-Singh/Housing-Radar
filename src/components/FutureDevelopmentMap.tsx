@@ -8,6 +8,9 @@ const EXCL_LABEL: Record<ExclKey, { de: string; en: string }> = {
   flood: { de: "Überschwemmungsgebiet", en: "Flood zone" },
   forest: { de: "Wald", en: "Forest" },
   cemetery: { de: "Friedhof", en: "Cemetery" },
+  allot: { de: "Kleingärten", en: "Allotments" },
+  parking: { de: "Parkplätze", en: "Car parks" },
+  green: { de: "Parks/Sport", en: "Parks/sports" },
 };
 
 function num(x: number | null, en: boolean) {
@@ -46,6 +49,8 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
         line(e.vacancy, en ? "Vacancy" : "Leerstand", "%", `≤ ${th.vacancy}`, en),
         line(e.coverage, en ? "Building coverage" : "Bebauung", "%", `≤ ${th.coverage}`, en),
         `${en ? "Remaining area" : "Verbleibende Fläche"}: ${num(blk.freeHa, en)} ha`,
+        `${en ? "Land-use plan (FNP) housing/mixed land" : "Im Flächennutzungsplan Wohn-/Mischbaufläche"}: ${num(blk.fnpHa, en)} ha${blk.resHa ? ` · ${en ? "still unbuilt" : "davon noch unbebaut"}: ${num(blk.resHa, en)} ha` : ""}`,
+        blk.farmPct ? `${en ? "Farmland share" : "Anteil Acker"}: ${blk.farmPct} %` : "",
         excl ? `${en ? "Excluded" : "Abgezogen"}: ${excl}` : "",
       ].filter(Boolean).join("<br>");
       l.unbindTooltip().bindTooltip(html, { sticky: true });
@@ -68,6 +73,8 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
         features: futureBlocks.flatMap((b, idx) => (b.g ? [{ type: "Feature", geometry: b.g, properties: { idx } }] : [])),
       };
       layerRef.current = L.geoJSON(fc as never).addTo(map);
+      const rfc = { type: "FeatureCollection", features: futureBlocks.flatMap((b) => (b.rg ? [{ type: "Feature", geometry: b.rg, properties: {} }] : [])) };
+      L.geoJSON(rfc as never, { interactive: false, style: { color: "#1d4ed8", weight: 1.5, dashArray: "4 3", fillColor: "#3b82f6", fillOpacity: 0.45 } }).addTo(map);
       map.fitBounds(layerRef.current.getBounds(), { padding: [10, 10] });
       restyle();
     });

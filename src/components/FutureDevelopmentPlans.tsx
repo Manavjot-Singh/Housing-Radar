@@ -28,8 +28,8 @@ export function FutureDevelopmentPlans() {
       </h2>
       <p className="mt-2 max-w-4xl text-sm text-muted-foreground">
         {en
-          ? "Search areas on ~500 m blocks: high housing pressure (little living space, low vacancy) combined with little building on the remaining land. Nature reserves, landscape protection areas, flood zones, forests and cemeteries are subtracted first. Move the sliders – the map recalculates instantly, so you can see how stable a result is."
-          : "Suchräume auf ~500-m-Blöcken: hoher Wohnungsdruck (wenig Wohnfläche, wenig Leerstand) und wenig Bebauung auf der verbleibenden Fläche. Vorher abgezogen werden Naturschutzgebiete, Landschaftsschutzgebiete, Überschwemmungsgebiete, Wald und Friedhöfe. Verschiebe die Regler – die Karte rechnet sofort neu, so siehst du, wie stabil ein Ergebnis ist."}
+          ? "Search areas on ~500 m blocks: high housing pressure (little living space, low vacancy) combined with little building on the remaining land. Nature reserves, landscape protection areas, flood zones, forests, cemeteries, allotments, car parks and parks/sports grounds are subtracted first; farmland stays (it is where new housing areas are usually zoned). Blue dashed areas are housing or mixed land in the city land-use plan (Flächennutzungsplan) that is still unbuilt. Move the sliders – the map recalculates instantly, so you can see how stable a result is."
+          : "Suchräume auf ~500-m-Blöcken: hoher Wohnungsdruck (wenig Wohnfläche, wenig Leerstand) und wenig Bebauung auf der verbleibenden Fläche. Vorher abgezogen werden Naturschutzgebiete, Landschaftsschutzgebiete, Überschwemmungsgebiete, Wald, Friedhöfe, Kleingärten, Parkplätze sowie Parks und Sportflächen; Ackerflächen bleiben (dort werden neue Baugebiete meist ausgewiesen). Blau gestrichelt: im Flächennutzungsplan ausgewiesene Wohn- oder Mischbauflächen, die noch unbebaut sind. Verschiebe die Regler – die Karte rechnet sofort neu, so siehst du, wie stabil ein Ergebnis ist."}
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -46,6 +46,10 @@ export function FutureDevelopmentPlans() {
           <b>{hits.length}</b> {en ? "blocks" : "Blöcke"} · <b>{fmt(ha)} ha</b> {en ? "remaining area" : "verbleibende Fläche"}
           {districts.length > 0 && <span className="text-muted-foreground"> · {districts.join(", ")}</span>}
         </span>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={t.onlyPlanned} onChange={(e) => setT((p) => ({ ...p, onlyPlanned: e.target.checked }))} />
+          {en ? "Only blocks with housing land in the land-use plan" : "Nur Blöcke mit Wohnbaufläche im Flächennutzungsplan"}
+        </label>
         <Button variant="outline" size="sm" onClick={() => setT(DEFAULT_THRESHOLDS)}>{en ? "Reset" : "Zurücksetzen"}</Button>
       </div>
 

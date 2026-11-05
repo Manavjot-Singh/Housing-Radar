@@ -1,17 +1,17 @@
 import zukunft from "@/data/zukunft-bloecke.json";
 import { districtByName } from "@/lib/radar";
 
-export type ExclKey = "nsg" | "lsg" | "flood" | "forest" | "cemetery";
+export type ExclKey = "nsg" | "lsg" | "flood" | "forest" | "cemetery" | "allot" | "parking" | "green";
 export type FutureBlock = {
   id: string; d: string; ew: number;
   living: number | null; vac: number | null; cover: number | null;
-  freeHa: number; exclPct: number; excl: Partial<Record<ExclKey, number>>;
+  freeHa: number; fnpHa: number; resHa: number; farmPct: number; rg: GeoJSON.Geometry | null; exclPct: number; excl: Partial<Record<ExclKey, number>>;
   g: GeoJSON.Geometry | null;
 };
 export const futureBlocks = zukunft as unknown as FutureBlock[];
 
-export type Thresholds = { living: number; vacancy: number; coverage: number };
-export const DEFAULT_THRESHOLDS: Thresholds = { living: 50, vacancy: 11, coverage: 10 };
+export type Thresholds = { living: number; vacancy: number; coverage: number; onlyPlanned: boolean };
+export const DEFAULT_THRESHOLDS: Thresholds = { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false };
 
 export type Check = { ok: boolean | null; value: number | null; fromDistrict: boolean };
 export type Evaluation = { living: Check; vacancy: Check; coverage: Check; pass: boolean };
@@ -26,6 +26,6 @@ export function evaluate(b: FutureBlock, t: Thresholds): Evaluation {
   const living: Check = { ...lv, ok: lv.value == null ? null : lv.value < t.living };
   const vacancy: Check = { ...vc, ok: vc.value == null ? null : vc.value <= t.vacancy };
   const coverage: Check = { value: b.cover, fromDistrict: false, ok: b.cover == null ? null : b.cover <= t.coverage };
-  const pass = b.g != null && living.ok === true && vacancy.ok === true && coverage.ok === true;
+  const pass = b.g != null && living.ok === true && vacancy.ok === true && coverage.ok === true && (!t.onlyPlanned || b.fnpHa > 0);
   return { living, vacancy, coverage, pass };
 }
