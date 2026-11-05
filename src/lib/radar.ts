@@ -109,9 +109,9 @@ export const indicators: Record<
     hint: "Räume aller Wohnungen geteilt durch die Einwohner (7 und mehr Räume als 7 gezählt).",
   },
   versorgung: {
-    label: "Versorgung", labelEn: "Amenities", hintEn: "Share of the selected amenities within walking distance: supermarket, bakery, doctor (600 m each), bus/rail stop (400 m). With none ticked, all four count.",
+    label: "Versorgung", labelEn: "Amenities", hintEn: "Share of the selected amenities within walking distance along real footpaths: supermarket, bakery, doctor (600 m each), bus/rail stop (400 m). With none ticked, all four count.",
     unit: "%", breaks: [12.5, 37.5, 62.5, 87.5], decimals: 0, gridSource: true, gridIndex: 8, legend: ["0 %", "25 %", "50 %", "75 %", "100 %"],
-    hint: "Anteil der ausgewählten Angebote, die zu Fuß erreichbar sind: Supermarkt, Bäckerei, Arztpraxis (je 600 m), Bus-/Bahnhalt (400 m). Ist nichts angehakt, zählen alle vier.",
+    hint: "Anteil der ausgewählten Angebote, die auf echten Fußwegen erreichbar sind: Supermarkt, Bäckerei, Arztpraxis (je 600 m), Bus-/Bahnhalt (400 m). Ist nichts angehakt, zählen alle vier.",
   },
   gewerbeLeerstand: {
     label: "Gewerbeleerstand", labelEn: "Commercial vacancy", hintEn: "Vacant or soon-to-be-vacant shops and commercial units within 250 m (LeAn extract, Altstadt shopping streets only – no data elsewhere).",
