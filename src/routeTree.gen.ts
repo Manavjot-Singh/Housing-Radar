@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QuellenRouteImport } from './routes/quellen'
+import { Route as StaedteRouteImport } from './routes/staedte'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const QuellenRoute = QuellenRouteImport.update({
   path: '/quellen',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StaedteRoute = StaedteRouteImport.update({
+  id: '/staedte',
+  path: '/staedte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/quellen': typeof QuellenRoute
+  '/staedte': typeof StaedteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/quellen': typeof QuellenRoute
+  '/staedte': typeof StaedteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/quellen': typeof QuellenRoute
+  '/staedte': typeof StaedteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/quellen'
+  fullPaths: '/' | '/quellen' | '/staedte'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/quellen'
-  id: '__root__' | '/' | '/quellen'
+  to: '/' | '/quellen' | '/staedte'
+  id: '__root__' | '/' | '/quellen' | '/staedte'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   QuellenRoute: typeof QuellenRoute
+  StaedteRoute: typeof StaedteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuellenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/staedte': {
+      id: '/staedte'
+      path: '/staedte'
+      fullPath: '/staedte'
+      preLoaderRoute: typeof StaedteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   QuellenRoute: QuellenRoute,
+  StaedteRoute: StaedteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
