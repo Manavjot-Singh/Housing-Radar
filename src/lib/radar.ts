@@ -172,7 +172,7 @@ export function cellValue(c: Cell, ind: Indicator): number | null {
 // The 100 m census squares are ~4 pixels wide in the city overview, so the map groups them
 // into ~500 m blocks (5 x 5 cells) that never cross a district border. scripts/prepare_blocks.py
 // builds them from gitter.json; the tile grid below must stay identical to that script.
-const BLOCK_LON0 = 10.30, BLOCK_LAT0 = 53.10, BLOCK_DLON = 0.0075, BLOCK_DLAT = 0.0045;
+export const BLOCK_LON0 = 10.30, BLOCK_LAT0 = 53.10, BLOCK_DLON = 0.0075, BLOCK_DLAT = 0.0045;
 
 /** Block: [key, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling %, rooms/person, amenities, cells, vacancy coverage %, district]. */
 export type Block = [string, number, number | null, number | null, number | null, number | null, number | null, number, number, number, string];

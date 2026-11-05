@@ -36,3 +36,19 @@ describe("land-use plan filter", () => {
     expect(hits.every((b) => b.fnpHa > 0)).toBe(true);
   });
 });
+
+import { quadrantOf, quadrantStats } from "@/lib/future";
+describe("quadrants", () => {
+  it("assigns a block north-east of the town hall to NE", () => {
+    // ix 15 → lon 10.41375, iy 33 → lat 53.25075
+    expect(quadrantOf({ ...base, id: "X|15|33" })).toBe("NE");
+    expect(quadrantOf({ ...base, id: "X|10|30" })).toBe("SW");
+  });
+  it("ranks the quadrant with more suitable + plan land first", () => {
+    const a = { ...base, id: "X|15|33", freeHa: 5, resHa: 0 };
+    const b = { ...base, id: "X|10|30", freeHa: 5, resHa: 8 };
+    const r = quadrantStats([a, b], { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false });
+    expect(r[0].q).toBe("SW");
+    expect(r[0].score).toBe(13);
+  });
+});
