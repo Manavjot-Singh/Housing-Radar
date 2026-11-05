@@ -87,7 +87,8 @@ ovq = f"""[out:json][timeout:240];
  way["building"]({miny},{minx},{maxy},{maxx}););
 out geom;"""
 osm = None
-for ep in ("https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"):
+for ep in ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
+           "https://maps.mail.ru/osm/tools/overpass/api/interpreter"] * 2:
     try:
         osm = get(ep, data=urlencode({"data": ovq}).encode(), timeout=300)
         break
