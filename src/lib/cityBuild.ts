@@ -24,7 +24,8 @@ const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.p
 const SCHUTZ = "https://www.umweltkarten-niedersachsen.de/geoserver/SchutzgebieteNI/wfs";
 const ALKIS = "https://opendata.lgln.niedersachsen.de/doorman/noauth/alkis_wfs_einfach";
 
-type OsmEl = { type: string; id: number; tags?: Record<string, string>; lat?: number; lon?: number; center?: { lat: number; lon: number }; geometry?: { lat: number; lon: number }[]; members?: { type: string; role: string; geometry?: { lat: number; lon: number }[] }[] };
+type Tags = Partial<Record<"name" | "admin_level" | "shop" | "amenity" | "healthcare" | "landuse" | "natural" | "leisure" | "parking", string>>;
+type OsmEl = { type: string; id: number; tags?: Tags; lat?: number; lon?: number; center?: { lat: number; lon: number }; geometry?: { lat: number; lon: number }[]; members?: { type: string; role: string; geometry?: { lat: number; lon: number }[] }[] };
 
 async function overpass(q: string): Promise<OsmEl[]> {
   let last = "";
@@ -249,7 +250,7 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
 
   // ---- future development blocks: 100 m sampling of exclusion areas
   const excl = osmPolys(exclEls);
-  const tagged = (pred: (t: Record<string, string>) => boolean) => osmPolys(exclEls.filter((x) => pred(x.tags ?? {})));
+  const tagged = (pred: (t: Tags) => boolean) => osmPolys(exclEls.filter((x) => pred(x.tags ?? {})));
   const testers = {
     nsg: makeTester(nsg), lsg: makeTester(lsg),
     forest: makeTester(tagged((t) => t.landuse === "forest" || t.natural === "wood")),

@@ -86,5 +86,5 @@ export const buildCityData = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const origin = new URL(getRequest().url).origin;
-    return buildCity({ ...data, origin });
+    return JSON.stringify(await buildCity({ ...data, origin }));
   });

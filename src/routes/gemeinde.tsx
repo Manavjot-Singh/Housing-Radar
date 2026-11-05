@@ -6,7 +6,7 @@ import { MunicipalityMap } from "@/components/MunicipalityMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLang } from "@/lib/i18n";
-import { applyCity } from "@/lib/city";
+import { applyCity, type CityData } from "@/lib/city";
 import { buildCityData, loadMunicipality, searchMunicipality } from "@/lib/municipality.functions";
 import type { MunicipalityResult } from "@/lib/municipality";
 
@@ -63,7 +63,7 @@ function Gemeinde() {
     if (!pick) return;
     setBusyDash(true); setErr(null);
     try {
-      const c = await build({ data: { osmId: pick.osmId, ags: pick.ags, name: pick.name } });
+      const c = JSON.parse(await build({ data: { osmId: pick.osmId, ags: pick.ags, name: pick.name } })) as CityData;
       applyCity(c);
       await navigate({ to: "/" });
     } catch (x) { setErr((en ? "Building the dashboard failed: " : "Dashboard konnte nicht erstellt werden: ") + (x instanceof Error ? x.message : "")); }
