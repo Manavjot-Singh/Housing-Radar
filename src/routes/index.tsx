@@ -206,7 +206,7 @@ function Index() {
                         <span className="h-2.5 flex-1 overflow-hidden rounded-sm bg-muted">
                           <span className="block h-full bg-scale-5" style={{ width: `${h.share}%` }} />
                         </span>
-                        <span className="w-24 shrink-0 text-right font-mono text-xs">{fmtAuto(h.share)} % · {h.people.toLocaleString(loc)}</span>
+                        <span className="w-28 shrink-0 whitespace-nowrap text-right font-mono text-xs">{fmtAuto(h.share)} % · {h.people.toLocaleString(loc)}</span>
                       </button>
                     </li>
                   ))}

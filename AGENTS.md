@@ -30,3 +30,4 @@ use the editor.
 <!-- LOVABLE:END -->
 
 - Housing data is precomputed offline by scripts/prepare_data.py (Zensus 2022 100m grid + OSM districts) into src/data/*.json; the app reads static JSON so the demo needs no backend.
+- Analysis layers (65+, building type, rooms, OSM amenities) are added by scripts/prepare_layers.py on top of prepare_data.py output; combined analyses run client-side on the static grid.
