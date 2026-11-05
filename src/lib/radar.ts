@@ -1,4 +1,5 @@
 import blocke from "@/data/blocke.json";
+import gitter from "@/data/gitter.json";
 import gewerbe from "@/data/gewerbe.json";
 import stadtteile from "@/data/stadtteile.json";
 import summary from "@/data/summary.json";
@@ -108,9 +109,9 @@ export const indicators: Record<
     hint: "Räume aller Wohnungen geteilt durch die Einwohner (7 und mehr Räume als 7 gezählt).",
   },
   versorgung: {
-    label: "Versorgung", labelEn: "Amenities", hintEn: "How many of four amenities are within walking distance: supermarket (600 m), bakery (600 m), doctor (600 m), bus/rail stop (400 m).",
-    unit: "/ 4", breaks: [0.5, 1.5, 2.5, 3.5], decimals: 1, gridSource: true, gridIndex: 8, legend: ["0", "1", "2", "3", "4"],
-    hint: "Wie viele von vier Angeboten zu Fuß erreichbar sind: Supermarkt (600 m), Bäckerei (600 m), Arztpraxis (600 m), Bus-/Bahnhalt (400 m).",
+    label: "Versorgung", labelEn: "Amenities", hintEn: "Share of the selected amenities within walking distance: supermarket, bakery, doctor (600 m each), bus/rail stop (400 m). With none ticked, all four count.",
+    unit: "%", breaks: [12.5, 37.5, 62.5, 87.5], decimals: 0, gridSource: true, gridIndex: 8, legend: ["0 %", "25 %", "50 %", "75 %", "100 %"],
+    hint: "Anteil der ausgewählten Angebote, die zu Fuß erreichbar sind: Supermarkt, Bäckerei, Arztpraxis (je 600 m), Bus-/Bahnhalt (400 m). Ist nichts angehakt, zählen alle vier.",
   },
   gewerbeLeerstand: {
     label: "Gewerbeleerstand", labelEn: "Commercial vacancy", hintEn: "Vacant or soon-to-be-vacant shops and commercial units within 250 m (LeAn extract, Altstadt shopping streets only – no data elsewhere).",
@@ -148,12 +149,13 @@ export function value(d: District, ind: Indicator): number | null {
   return d[ind];
 }
 
-/** Grid cell: [lon, lat, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling building %, rooms/person, amenities 0–4, district]. */
+/** Grid cell: [lon, lat, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling building %, rooms/person, amenity reach bitmask (shop 1, doc 2, pt 4, bakery 8), district]. */
 export type Cell = [number, number, number | null, number | null, number | null, number | null, number | null, number | null, number, string];
 
 /** The cell's own value, or null when the census publishes none (or the indicator only exists per district). */
 export function cellOwn(c: Cell, ind: Indicator): number | null {
   if (ind === "gewerbeLeerstand") return c[9] === COMMERCIAL_DISTRICT ? commercialNear(c[0], c[1], 250) : null;
+  if (ind === "versorgung") return amenityScore(c[8]);
   const i = indicators[ind].gridIndex;
   return i == null ? null : (c[i] as number | null);
 }
@@ -192,6 +194,7 @@ export function blockOwn(b: Block, ind: Indicator): number | null {
     const [, ix, iy] = b[0].split("|").map(Number);
     return commercialNear(BLOCK_LON0 + (ix! + 0.5) * BLOCK_DLON, BLOCK_LAT0 + (iy! + 0.5) * BLOCK_DLAT, 400);
   }
+  if (ind === "versorgung") return blockAmenity.get(b[0]) ?? null;
   const i = indicators[ind].gridIndex;
   return i == null ? null : (b[i - 1] as number | null);
 }
@@ -208,6 +211,41 @@ export function blockValueOf(b: Block, ind: Indicator): number | null {
 export function blockValue(c: Cell, ind: Indicator): number | null {
   const b = blockOf(c);
   return b ? blockValueOf(b, ind) : null;
+}
+
+// ============= Amenity score follows the selected amenities =============
+export type AmenityKey = "shop" | "doc" | "pt" | "bakery";
+export const AMENITY_BIT: Record<AmenityKey, number> = { shop: 1, doc: 2, pt: 4, bakery: 8 };
+const ALL_AMENITIES = 15;
+let amenityMask = ALL_AMENITIES;
+const gridCells = gitter as unknown as Cell[];
+const blockAmenity = new Map<string, number>();
+const bits = (m: number) => { let n = 0; for (; m; m &= m - 1) n++; return n; };
+
+/** % of the selected amenities a cell's reach bitmask covers. */
+export function amenityScore(reach: number, mask = amenityMask): number {
+  return (bits(reach & mask) / bits(mask)) * 100;
+}
+
+/** Re-scores cells, blocks and districts against the ticked amenities; none ticked = all four. */
+export function setAmenitySelection(sel: Partial<Record<AmenityKey, boolean>>) {
+  const m = (Object.keys(AMENITY_BIT) as AmenityKey[]).reduce((s, k) => (sel[k] ? s | AMENITY_BIT[k] : s), 0);
+  amenityMask = m || ALL_AMENITIES;
+  const blockSum = new Map<string, [number, number]>();
+  const distSum = new Map<string, [number, number]>();
+  for (const c of gridCells) {
+    const v = amenityScore(c[8]);
+    const b = blockOf(c);
+    if (b) { const a = blockSum.get(b[0]) ?? [0, 0]; a[0] += v; a[1]++; blockSum.set(b[0], a); }
+    if (c[2]) { const a = distSum.get(c[9]) ?? [0, 0]; a[0] += v * c[2]; a[1] += c[2]; distSum.set(c[9], a); }
+  }
+  blockAmenity.clear();
+  for (const [k, [s, n]] of blockSum) blockAmenity.set(k, s / n);
+  for (const d of districts) { const a = distSum.get(d.name); d.versorgung = a && a[1] ? a[0] / a[1] : null; }
+}
+/** Amenities currently counted (all four when none is ticked). */
+export function countedAmenities(): AmenityKey[] {
+  return (Object.keys(AMENITY_BIT) as AmenityKey[]).filter((k) => amenityMask & AMENITY_BIT[k]);
 }
 
 export type Dir = "high" | "low";
@@ -227,7 +265,7 @@ export function thresholdText(cond: Condition, en = false): string {
   const u = en && i.unit === "Pers." ? "ppl" : i.unit;
   const x = cond.dir === "high" ? (cond.min ?? i.breaks[2]!) : i.breaks[1]!;
   if (cond.ind === "gewerbeLeerstand") return cond.dir === "high" ? (en ? "≥ 1 unit within 250 m" : "≥ 1 Objekt im Umkreis von 250 m") : (en ? "none nearby" : "keins in der Nähe");
-  if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "3–4 of 4 nearby" : "3–4 von 4 in der Nähe") : (en ? "0–1 of 4 nearby" : "0–1 von 4 in der Nähe");
+  if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "≥ 62.5 % of selected nearby" : "≥ 62,5 % der gewählten in der Nähe") : (en ? "< 37.5 % of selected nearby" : "< 37,5 % der gewählten in der Nähe");
   return `${cond.dir === "high" ? "≥" : "<"} ${fmtNum(x)}${u ? " " + u : ""}`;
 }
 
@@ -315,3 +353,5 @@ export const sources: Source[] = [
   { en: { name: "OpenStreetMap amenities", content: "62 supermarkets, 55 bakeries, 80 doctors' practices, 513 bus/rail stops", level: "Points", status: "Retrieved 5 Nov 2026" }, name: "Versorgung aus OpenStreetMap", publisher: "OpenStreetMap-Mitwirkende", content: "62 Supermärkte, 55 Bäckereien, 80 Arztpraxen, 513 Bus-/Bahnhalte", level: "Punkte", licence: "ODbL 1.0", status: "Abruf 05.11.2026", url: "https://www.openstreetmap.org" },
   { en: { name: "Nature reserves (NSG)", content: "Five protected polygons; removed from the future-development review zones", level: "City-clipped polygons", status: "NLWKN WFS extract 5 Nov 2026" }, name: "Naturschutzgebiete Niedersachsen", publisher: "NLWKN · Niedersächsisches Umweltkarten-Geoportal", content: "Fünf Schutzgebietsflächen; von den zukünftigen Entwicklungs-Prüfzonen abgezogen", level: "Auf Stadtteilumgrenzung zugeschnittene Polygone", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "NLWKN-WFS-Auszug 05.11.2026", url: "https://umweltportal.niedersachsen.de/suche/detail?id=numis-metadaten-7d3a9e20-4519-456e-8a75-b6d18250c5a8" },
 ];
+
+setAmenitySelection({});

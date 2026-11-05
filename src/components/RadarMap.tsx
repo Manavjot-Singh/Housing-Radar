@@ -9,7 +9,8 @@ import {
   type Cell, type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
-export type AmenityKey = "shop" | "doc" | "pt" | "bakery";
+export type { AmenityKey } from "@/lib/radar";
+import type { AmenityKey } from "@/lib/radar";
 
 type Props = {
   lang: "de" | "en";
