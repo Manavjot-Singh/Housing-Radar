@@ -32,7 +32,7 @@ export function useLang(): [Lang, (l: Lang) => void] {
 export const t = {
   de: {
     map: "Karte", sources: "Quellen & Methode", city: "Hansestadt Lüneburg",
-    title: "Wohnraum-Radar Lüneburg: Wo Platz frei werden kann",
+    title: "WOHNRAUM-RADAR LÜNEBURG: POTENZIAL NUTZEN",
     intro: (avg: string, pop: string) => <>Im Lüneburger Schnitt hat jeder Einwohner <strong className="text-foreground">{avg} m²</strong> Wohnfläche ({pop} Einwohner in 17 Stadtteilen). Neun Datensätze, auf Stadtteile zusammengeführt, ganz ohne personenbezogene Daten.</>,
     detail: "Detailfarben innerhalb der Stadtteile (500-m-Blöcke, 100 m beim Reinzoomen)",
     block: "500-m-Block", blockCells: "Quadrate im Block",
