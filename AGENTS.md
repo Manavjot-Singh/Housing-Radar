@@ -33,3 +33,4 @@ use the editor.
 - Analysis layers (65+, building type, rooms, OSM amenities) are added by scripts/prepare_layers.py on top of prepare_data.py output; combined analyses run client-side on the static grid.
 - The 500 m block layer is built by scripts/prepare_blocks.py from gitter.json; its tile origin and size must stay identical to the constants in src/lib/radar.ts, or cells silently lose their block.
 - The map's cell layer must use Leaflet's SVG renderer: with the canvas renderer hit-testing never fires, so hover tooltips over cells and blocks disappear without any error.
+- Other-city search (/staedte) fetches outlines live from OSM (Nominatim + Overpass with mirror fallback) and joins city-wide figures from src/data/gemeinden.json (scripts/prepare_gemeinden.py, Zensus Regionaltabellen) by 8-digit AGS; nationwide 100 m grids are too large to process live.
