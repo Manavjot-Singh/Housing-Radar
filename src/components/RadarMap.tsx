@@ -4,7 +4,7 @@ import type * as L from "leaflet";
 import { t } from "@/lib/i18n";
 import {
   amenityPoints, gridCells, cityName, blockOf, blockOwn, commercial, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
-  type Cell, type Condition, type District, type Indicator,
+  type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
 export type { AmenityKey } from "@/lib/radar";
