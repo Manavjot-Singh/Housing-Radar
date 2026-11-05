@@ -1,11 +1,10 @@
 // Rule-based "what the city can do" ideas, driven by whatever figures exist for a place.
-// Works for a Lüneburg district (compared with the city) and for any other municipality
-// (compared with Germany), so ideas change whenever the place changes.
+// Each district is compared with the city, so ideas change whenever the place changes.
 
 export type Profile = {
   wohnflaecheProKopf?: number | null;
   leerstandsquote?: number | null;
-  /** Share of older residents in % (65+ in Lüneburg, 67+ for other municipalities). */
+  /** Share of older residents in % (65+). */
   anteilAelter?: number | null;
   efhAnteil?: number | null;
   raeumeProKopf?: number | null;
@@ -15,9 +14,6 @@ export type Profile = {
 };
 
 export type Idea = { id: string; de: { title: string; text: string }; en: { title: string; text: string } };
-
-/** Approximate Germany-wide Zensus 2022 reference values. */
-export const GERMANY: Profile = { wohnflaecheProKopf: 47.7, leerstandsquote: 4.3, anteilAelter: 19.5, efhAnteil: 46 };
 
 const above = (v: number | null | undefined, ref: number | null | undefined, f = 1.1) => v != null && ref != null && v >= ref * f;
 const below = (v: number | null | undefined, ref: number | null | undefined, f = 0.9) => v != null && ref != null && v <= ref * f;
