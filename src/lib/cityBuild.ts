@@ -31,7 +31,7 @@ async function overpass(q: string): Promise<OsmEl[]> {
   let last = "";
   for (const ep of [...OVERPASS, ...OVERPASS]) {
     try {
-      const r = await fetch(ep, { method: "POST", headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
+      const r = await fetch(ep, { method: "POST", headers: { ...UA, "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q), signal: AbortSignal.timeout(40000) });
       if (r.ok) return ((await r.json()) as { elements: OsmEl[] }).elements;
       last = `HTTP ${r.status}`;
     } catch (e) { last = String(e); }
@@ -74,16 +74,29 @@ async function alkis(b: number[], ags: string) {
   return { buildings: out, truncated };
 }
 
-/** Closed outer ways (and closed outer members of multipolygons) as polygons. */
-function osmPolys(els: OsmEl[]): Poly[] {
-  const out: Poly[] = [];
-  const ring = (g: { lat: number; lon: number }[]): Ring => g.map((p) => [p.lon, p.lat]);
-  for (const e of els) {
-    if (e.type === "way" && e.geometry && e.geometry.length > 3) out.push([ring(e.geometry)]);
-    if (e.type === "relation") for (const m of e.members ?? []) if (m.type === "way" && m.role !== "inner" && m.geometry && m.geometry.length > 3) {
-      const g = m.geometry; const a = g[0]!, z = g[g.length - 1]!;
-      if (a.lat === z.lat && a.lon === z.lon) out.push([ring(g)]);
+/** ALKIS actual land use (ave:Nutzung), only the classes used as exclusion areas. */
+async function alkisLandUse(b: number[]) {
+  const [w, s, e, n] = b;
+  const out: Record<"forest" | "cemetery" | "allot" | "parking" | "green", Poly[]> = { forest: [], cemetery: [], allot: [], parking: [], green: [] };
+  for (let page = 0; page < 20; page++) {
+    const q = new URLSearchParams({ SERVICE: "WFS", VERSION: "2.0.0", REQUEST: "GetFeature", TYPENAMES: "ave:Nutzung", BBOX: `${s},${w},${n},${e},urn:ogc:def:crs:EPSG::4326`, SRSNAME: "urn:ogc:def:crs:EPSG::4326", COUNT: "10000", STARTINDEX: String(page * 10000) });
+    const r = await fetch(`${ALKIS}?${q}`, { headers: UA });
+    if (!r.ok) throw new Error(`ALKIS Nutzung: HTTP ${r.status}`);
+    const parts = (await r.text()).split("<wfs:member>");
+    for (let i = 1; i < parts.length; i++) {
+      const m = parts[i]!;
+      const art = /<nutzart>([^<]+)</.exec(m)?.[1] ?? "", bez = /<bez>([^<]+)</.exec(m)?.[1] ?? "";
+      const cls = bez === "Kleingarten" ? "allot" : bez === "Parkplatz" ? "parking" : art === "Wald" || art === "Gehölz" ? "forest"
+        : art === "Friedhof" ? "cemetery" : art.startsWith("Sport, ") || art.startsWith("Sport-") ? "green" : null;
+      if (!cls) continue;
+      const pos = /<gml:posList>([^<]+)<\/gml:posList>/.exec(m);
+      if (!pos) continue;
+      const nums = pos[1]!.trim().split(/\s+/).map(Number);
+      const ring: Ring = [];
+      for (let k = 0; k + 1 < nums.length; k += 2) ring.push([nums[k + 1]!, nums[k]!]);
+      if (ring.length > 3) out[cls].push([ring]);
     }
+    if (parts.length - 1 < 10000) break;
   }
   return out;
 }
@@ -101,10 +114,12 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   const area = `area(${3600000000 + input.osmId})->.a;`;
 
   // ---- everything live, in parallel
-  const [distEls, amenEls, exclEls, nsg, lsg, alk, cells] = await Promise.all([
-    overpass(`[out:json][timeout:60];${area}rel(area.a)["boundary"="administrative"]["admin_level"~"^(9|10)$"];out tags;`),
-    overpass(`[out:json][timeout:90];${area}(nwr(area.a)["shop"~"^(supermarket|convenience|bakery)$"];nwr(area.a)["amenity"~"^(doctors|clinic)$"];nwr(area.a)["healthcare"="doctor"];node(area.a)["highway"="bus_stop"];nwr(area.a)["railway"~"^(station|halt)$"];);out center tags;`),
-    overpass(`[out:json][timeout:120];${area}(wr(area.a)["landuse"="forest"];wr(area.a)["natural"="wood"];wr(area.a)["landuse"="cemetery"];wr(area.a)["amenity"="grave_yard"];wr(area.a)["landuse"="allotments"];wr(area.a)["amenity"="parking"]["parking"!~"underground|multi-storey"];wr(area.a)["leisure"~"^(park|pitch|sports_centre)$"];);out geom;`),
+  // One Overpass call (districts + amenities) to stay under its rate limit.
+  const osmP = overpass(`[out:json][timeout:60];${area}(rel(area.a)["boundary"="administrative"]["admin_level"~"^(9|10)$"];nwr(area.a)["shop"~"^(supermarket|convenience|bakery)$"];nwr(area.a)["amenity"~"^(doctors|clinic)$"];nwr(area.a)["healthcare"="doctor"];node(area.a)["highway"="bus_stop"];nwr(area.a)["railway"~"^(station|halt)$"];);out center tags;`)
+    .catch(() => { notes.push("noOsm"); return [] as OsmEl[]; });
+  const [osmEls, landUse, nsg, lsg, alk, cells] = await Promise.all([
+    osmP,
+    alkisLandUse(bb),
     protectedAreas("SchutzgebieteNI:ProtectedSites_IUCN_HabitatSpeciesManagementArea_Surface", bb, () => true),
     protectedAreas("SchutzgebieteNI:ProtectedSites_IUCN_ProtectedLandscapeOrSeascape_Surface", bb,
       (p) => p["d_3_designation"] === "LSG" || String(p["inspireid_localid"] ?? "").includes("LSG") || String(p["sitename_name_1"] ?? "").includes("Landschaftsschutz")),
@@ -124,6 +139,8 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   if (alk.truncated) notes.push("buildingsTruncated");
 
   // ---- districts: pick the admin level that covers most residents, else the whole town
+  const distEls = osmEls.filter((x) => x.type === "relation" && x.tags?.admin_level);
+  const amenEls = osmEls.filter((x) => !(x.type === "relation" && x.tags?.admin_level));
   const cand = distEls.filter((x) => x.tags?.name).map((x) => ({ id: x.id, name: x.tags!.name!, lvl: x.tags!.admin_level! }));
   let districts: { id: number; name: string; polys: Poly[]; test: (x: number, y: number) => boolean }[] = [];
   if (cand.length >= 2) {
@@ -249,14 +266,10 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   }
 
   // ---- future development blocks: 100 m sampling of exclusion areas
-  const tagged = (pred: (t: Tags) => boolean) => osmPolys(exclEls.filter((x) => pred(x.tags ?? {})));
   const testers = {
     nsg: makeTester(nsg), lsg: makeTester(lsg),
-    forest: makeTester(tagged((t) => t.landuse === "forest" || t.natural === "wood")),
-    cemetery: makeTester(tagged((t) => t.landuse === "cemetery" || t.amenity === "grave_yard")),
-    allot: makeTester(tagged((t) => t.landuse === "allotments")),
-    parking: makeTester(tagged((t) => t.amenity === "parking")),
-    green: makeTester(tagged((t) => !!t.leisure)),
+    forest: makeTester(landUse.forest), cemetery: makeTester(landUse.cemetery), allot: makeTester(landUse.allot),
+    parking: makeTester(landUse.parking), green: makeTester(landUse.green),
   };
   const SX = BLOCK_DLON / 5, SY = BLOCK_DLAT / 5; // ≈100 m
   const zukunft: Record<string, unknown>[] = [];
