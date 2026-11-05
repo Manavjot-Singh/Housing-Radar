@@ -38,7 +38,7 @@ function Index() {
           <h1 className="mt-1 text-4xl font-bold uppercase leading-none sm:text-5xl">Wo wird Wohnraum in Lüneburg ungleich genutzt?</h1>
           <p className="mt-3 text-muted-foreground">
             Im Lüneburger Schnitt hat jeder Einwohner <strong className="text-foreground">{cityAvg} m²</strong> Wohnfläche
-            ({cityPopulation.toLocaleString("de-DE")} Einwohner in 17 Stadtteilen). Drei öffentliche Datensätze, auf
+            ({cityPopulation.toLocaleString("de-DE")} Einwohner in 17 Stadtteilen). Vier öffentliche Datensätze, auf
             Stadtteile zusammengeführt, ganz ohne personenbezogene Daten.
           </p>
         </div>
@@ -80,7 +80,9 @@ function Index() {
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   <div><dt className="text-muted-foreground">Wohnfläche / Kopf</dt><dd className="font-display text-2xl font-semibold">{sel.wohnflaecheProKopf ?? "–"} m²</dd></div>
                   <div><dt className="text-muted-foreground">Leerstandsquote</dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${sel.leerstandsquote} %` : "keine Angabe"}</dd></div>
+                  <div><dt className="text-muted-foreground">Bebauungsdichte</dt><dd className="font-display text-2xl font-semibold">{sel.bebautAnteil} %</dd></div>
                   <div><dt className="text-muted-foreground">Einwohner</dt><dd className="font-medium">{sel.einwohner.toLocaleString("de-DE")}</dd></div>
+                  <div><dt className="text-muted-foreground">Gebäude (amtlich)</dt><dd className="font-medium">{sel.gebaeude.toLocaleString("de-DE")}</dd></div>
                   <div><dt className="text-muted-foreground">Datenabdeckung</dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>
                 <p className="mt-3 border-l-2 border-primary pl-3 text-sm">{verdict(sel)}</p>

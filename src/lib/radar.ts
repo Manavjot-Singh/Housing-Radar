@@ -12,9 +12,12 @@ export type District = {
   abweichung: number | null;
   abdeckung: number;
   flaecheKm2: number;
+  gebaeude: number;
+  bebautAnteil: number;
+  wohnGrundflaecheM2: number;
 };
 
-export type Indicator = "wohnflaecheProKopf" | "leerstandsquote";
+export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "bebautAnteil";
 
 export const geo = stadtteile as unknown as FeatureCollection<Geometry, District>;
 export const districts: District[] = geo.features.map((f) => f.properties);
@@ -24,6 +27,7 @@ export const cityPopulation = summary.einwohner;
 export const indicators: Record<Indicator, { label: string; unit: string; breaks: number[] }> = {
   wohnflaecheProKopf: { label: "Wohnfläche pro Einwohner", unit: "m²", breaks: [48, 52, 56, 61] },
   leerstandsquote: { label: "Leerstandsquote", unit: "%", breaks: [8, 10, 14, 20] },
+  bebautAnteil: { label: "Bebauungsdichte", unit: "%", breaks: [5, 10, 15, 25] },
 };
 
 /** Returns the scale class 1..5 (0 = no data). */
@@ -50,4 +54,5 @@ export const sources: Source[] = [
   { name: "Zensus 2022 – Durchschnittliche Wohnfläche je Bewohner", publisher: "Statistisches Bundesamt", content: "m² Wohnfläche pro Bewohner", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { name: "Zensus 2022 – Leerstandsquote", publisher: "Statistisches Bundesamt", content: "Anteil leerstehender Wohnungen – nur Wohnraum, Gewerbe (Läden, Büros) ist nicht enthalten", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { name: "Stadtteilgrenzen Lüneburg", publisher: "OpenStreetMap-Mitwirkende", content: "17 Stadtteile als Flächen", level: "Stadtteil-Polygone", licence: "ODbL 1.0", status: "Abruf 05.11.2026", url: "https://www.openstreetmap.org/relation/4191677" },
+  { name: "ALKIS Hausumringe Niedersachsen", publisher: "LGLN (Landesamt für Geoinformation und Landesvermessung)", content: "47.415 amtliche Gebäudegrundrisse der Hansestadt, daraus Bebauungsdichte je Stadtteil", level: "Einzelflächen (EPSG:25832)", licence: "CC-BY 4.0", status: "Auslesedatum 03.09.2026, vierteljährlich aktualisiert", url: "https://ni-lgln-opengeodata.hub.arcgis.com/pages/alkis-hausumringe" },
 ];
