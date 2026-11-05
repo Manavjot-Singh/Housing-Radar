@@ -1,0 +1,104 @@
+{
+ "Mittelfeld": {
+  "gebaeude": 2030,
+  "grundflaecheM2": 188539,
+  "wohnGrundflaecheM2": 119016,
+  "bebautAnteil": 14.0
+ },
+ "Rotes Feld": {
+  "gebaeude": 1803,
+  "grundflaecheM2": 207918,
+  "wohnGrundflaecheM2": 120345,
+  "bebautAnteil": 15.9
+ },
+ "Oedeme": {
+  "gebaeude": 4512,
+  "grundflaecheM2": 283215,
+  "wohnGrundflaecheM2": 194269,
+  "bebautAnteil": 4.3
+ },
+ "Rettmer": {
+  "gebaeude": 2223,
+  "grundflaecheM2": 150767,
+  "wohnGrundflaecheM2": 94941,
+  "bebautAnteil": 2.6
+ },
+ "Häcklingen": {
+  "gebaeude": 2496,
+  "grundflaecheM2": 150021,
+  "wohnGrundflaecheM2": 105381,
+  "bebautAnteil": 3.0
+ },
+ "Wilschenbruch": {
+  "gebaeude": 814,
+  "grundflaecheM2": 54522,
+  "wohnGrundflaecheM2": 42022,
+  "bebautAnteil": 1.4
+ },
+ "Bockelsberg": {
+  "gebaeude": 2186,
+  "grundflaecheM2": 209326,
+  "wohnGrundflaecheM2": 128255,
+  "bebautAnteil": 5.6
+ },
+ "Weststadt": {
+  "gebaeude": 2058,
+  "grundflaecheM2": 195630,
+  "wohnGrundflaecheM2": 106265,
+  "bebautAnteil": 5.3
+ },
+ "Ochtmissen": {
+  "gebaeude": 3183,
+  "grundflaecheM2": 196657,
+  "wohnGrundflaecheM2": 128601,
+  "bebautAnteil": 3.4
+ },
+ "Goseburg-Zeltberg": {
+  "gebaeude": 2564,
+  "grundflaecheM2": 443702,
+  "wohnGrundflaecheM2": 102411,
+  "bebautAnteil": 19.2
+ },
+ "Kreideberg": {
+  "gebaeude": 4083,
+  "grundflaecheM2": 319616,
+  "wohnGrundflaecheM2": 211931,
+  "bebautAnteil": 13.5
+ },
+ "Altstadt": {
+  "gebaeude": 2880,
+  "grundflaecheM2": 366800,
+  "wohnGrundflaecheM2": 225920,
+  "bebautAnteil": 34.9
+ },
+ "Ebensberg": {
+  "gebaeude": 1778,
+  "grundflaecheM2": 94139,
+  "wohnGrundflaecheM2": 72617,
+  "bebautAnteil": 4.1
+ },
+ "Lüne-Moorfeld": {
+  "gebaeude": 3602,
+  "grundflaecheM2": 457360,
+  "wohnGrundflaecheM2": 143072,
+  "bebautAnteil": 8.9
+ },
+ "Schützenplatz": {
+  "gebaeude": 1679,
+  "grundflaecheM2": 216968,
+  "wohnGrundflaecheM2": 101332,
+  "bebautAnteil": 23.6
+ },
+ "Kaltenmoor": {
+  "gebaeude": 4749,
+  "grundflaecheM2": 443537,
+  "wohnGrundflaecheM2": 232774,
+  "bebautAnteil": 6.8
+ },
+ "Neu Hagen": {
+  "gebaeude": 4774,
+  "grundflaecheM2": 939360,
+  "wohnGrundflaecheM2": 207759,
+  "bebautAnteil": 7.3
+ }
+}
