@@ -17,9 +17,9 @@ export const Route = createFileRoute("/quellen")({
 });
 
 const steps = [
-  ["Laden", "Zensus-2022-Tabellen im 100-m-Gitter (Einwohner, Wohnfläche je Bewohner, Leerstandsquote) und die Stadtteilgrenzen aus OpenStreetMap."],
-  ["Zusammenführen", "Jede Gitterzelle wird über ihren Mittelpunkt genau einem Stadtteil zugeordnet (Koordinatensystem EPSG:3035)."],
-  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Abweichung zum Stadtschnitt in %."],
+  ["Laden", "Zensus-2022-Tabellen im 100-m-Gitter (Einwohner, Wohnfläche je Bewohner, Leerstandsquote), die Stadtteilgrenzen aus OpenStreetMap und die amtlichen ALKIS-Gebäudegrundrisse des LGLN."],
+  ["Zusammenführen", "Jede Gitterzelle wird über ihren Mittelpunkt genau einem Stadtteil zugeordnet (EPSG:3035). Jedes Gebäude wird über seinen Schwerpunkt einem Stadtteil zugerechnet (EPSG:25832)."],
+  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Bebauungsdichte = Summe der Gebäudegrundflächen geteilt durch die Stadtteilfläche."],
   ["Datenschutz", "Es werden nur bereits amtlich geheimgehaltene Zensusdaten genutzt. Ergebnisse erscheinen nur auf Stadtteil- bzw. 100-m-Ebene, nie für Personen oder Haushalte."],
 ];
 
@@ -31,6 +31,7 @@ const limits = [
   "Die Leerstandsquote ist nach Einwohnern statt nach Wohnungen gewichtet, weil keine Wohnungszahl je Zelle geladen wurde. Das ist eine Näherung.",
   "Zellen an Stadtteilgrenzen werden vollständig dem Stadtteil ihres Mittelpunkts zugerechnet.",
   "Die Stadtteilgrenzen aus OpenStreetMap sind keine amtlichen Grenzen; sie sollten mit Lüne-GIS abgeglichen werden.",
+  "Die Bebauungsdichte zählt nur die Grundfläche der Gebäude, nicht die Geschosse – sie ist ein erster Anhaltspunkt für Nachverdichtung, kein Ersatz für ein Baulückenkataster. Garagen und Nebengebäude sind enthalten.",
 ];
 
 function Quellen() {
