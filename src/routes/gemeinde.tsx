@@ -26,13 +26,13 @@ export const Route = createFileRoute("/gemeinde")({
 type Hit = { osmId: number; name: string; label: string; ags: string };
 
 async function searchNI(q: string): Promise<Hit[]> {
-  const u = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: `${q}, Niedersachsen`, countrycodes: "de", format: "jsonv2", extratags: "1", addressdetails: "1", limit: "15" })}`;
+  const u = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: `${q}, Niedersachsen`, countrycodes: "de", format: "jsonv2", extratags: "1", addressdetails: "1", limit: "15", "accept-language": "de" })}`;
   const r = await fetch(u);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const rows = (await r.json()) as { osm_type: string; osm_id: number; name: string; display_name: string; address?: { state?: string }; extratags?: Record<string, string> }[];
+  const rows = (await r.json()) as { osm_type: string; osm_id: number; name: string; display_name: string; address?: Record<string, string>; extratags?: Record<string, string> }[];
   const seen = new Set<string>();
   return rows
-    .filter((x) => x.osm_type === "relation" && x.address?.state === "Niedersachsen" && /^03\d{6}$/.test(x.extratags?.["de:amtlicher_gemeindeschluessel"] ?? ""))
+    .filter((x) => x.osm_type === "relation" && x.address?.["ISO3166-2-lvl4"] === "DE-NI" && /^03\d{6}$/.test(x.extratags?.["de:amtlicher_gemeindeschluessel"] ?? ""))
     .map((x) => ({ osmId: x.osm_id, name: x.name, label: x.display_name, ags: x.extratags!["de:amtlicher_gemeindeschluessel"] }))
     .filter((h) => (seen.has(h.ags) ? false : (seen.add(h.ags), true)));
 }
