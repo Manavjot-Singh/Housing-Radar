@@ -79,7 +79,8 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
       const qs = { dashArray: "8 6", color: "#7f1d1d", weight: 2, interactive: false };
       L.polyline([[bb.getSouth() - 0.01, CENTRE.lon], [bb.getNorth() + 0.01, CENTRE.lon]], qs).addTo(map);
       L.polyline([[CENTRE.lat, bb.getWest() - 0.01], [CENTRE.lat, bb.getEast() + 0.01]], qs).addTo(map);
-      const lbl = (lat: number, lon: number, txt: string) => L.marker([lat, lon], { interactive: false, icon: L.divIcon({ className: "", html: `<span style="font:700 14px sans-serif;color:#7f1d1d;background:rgba(255,255,255,.85);padding:2px 6px;border-radius:4px">${txt}</span>` }) }).addTo(map);
+      const m = map;
+      const lbl = (lat: number, lon: number, txt: string) => L.marker([lat, lon], { interactive: false, icon: L.divIcon({ className: "", html: `<span style="font:700 14px sans-serif;color:#7f1d1d;background:rgba(255,255,255,.85);padding:2px 6px;border-radius:4px">${txt}</span>` }) }).addTo(m);
       const dy = (bb.getNorth() - CENTRE.lat) * 0.8, dx = (bb.getEast() - CENTRE.lon) * 0.8;
       lbl(CENTRE.lat + dy, CENTRE.lon - dx, en ? "NW" : "NW"); lbl(CENTRE.lat + dy, CENTRE.lon + dx * 0.9, en ? "NE" : "NO");
       lbl(CENTRE.lat - dy, CENTRE.lon - dx, en ? "SW" : "SW"); lbl(CENTRE.lat - dy, CENTRE.lon + dx * 0.9, en ? "SE" : "SO");

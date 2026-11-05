@@ -38,7 +38,7 @@ export type Quadrant = "NW" | "NE" | "SW" | "SE";
 export const QUADRANTS: Quadrant[] = ["NW", "NE", "SW", "SE"];
 
 export function blockCentre(b: FutureBlock) {
-  const [, ix, iy] = b.id.split("|").map(Number);
+  const [, ix = 0, iy = 0] = b.id.split("|").map(Number);
   return { lon: BLOCK_LON0 + (ix + 0.5) * BLOCK_DLON, lat: BLOCK_LAT0 + (iy + 0.5) * BLOCK_DLAT };
 }
 export function quadrantOf(b: FutureBlock): Quadrant {
