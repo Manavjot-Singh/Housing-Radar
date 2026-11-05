@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Pre-bundle the slider up front so the preview never re-optimizes it mid-session
+  // (that produced a second React copy and a blank screen).
+  vite: { optimizeDeps: { include: ["@radix-ui/react-slider"] } },
 });
