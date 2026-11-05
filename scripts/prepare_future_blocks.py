@@ -53,7 +53,7 @@ lsg_src = get("https://www.umweltkarten-niedersachsen.de/geoserver/Schutzgebiete
     "service": "WFS", "version": "2.0.0", "request": "GetFeature",
     "typeNames": "SchutzgebieteNI:ProtectedSites_IUCN_ProtectedLandscapeOrSeascape_Surface",
     "bbox": f"{minx},{miny},{maxx},{maxy},EPSG:4326", "outputFormat": "application/json"}))
-lsg_f = [f for f in lsg_src["features"] if f.get("properties", {}).get("d_3_designation", "LSG") == "LSG"]
+lsg_f = [f for f in lsg_src["features"] if f["properties"].get("d_3_designation") == "LSG" or "Landschaftsschutz" in (f["properties"].get("sitename_name_1") or "")]
 lsg = clip([transform(to_m, shape(f["geometry"])) for f in lsg_f])
 # WFS 2.0 with EPSG:4326 may return lat/lon order; detect by checking overlap
 if lsg.is_empty and lsg_f:
