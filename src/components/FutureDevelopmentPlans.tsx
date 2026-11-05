@@ -61,7 +61,7 @@ export function FutureDevelopmentPlans() {
       </div>
 
       <div className="mt-3 overflow-hidden rounded-md border">
-        <FutureDevelopmentMap lang={lang} t={t} />
+        <FutureDevelopmentMap lang={lang} t={t} focus={best.score > 0 ? best.q : null} />
       </div>
       <div className="mt-4 rounded-md border p-4">
         <p className="kicker">{en ? "Direction for outward growth" : "Richtung für Stadterweiterung"}</p>
@@ -75,29 +75,9 @@ export function FutureDevelopmentPlans() {
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           {en
-            ? "City split into four quadrants around the town hall. Score = area of blocks meeting all conditions above + still-unbuilt housing land in the land-use plan (both after exclusions). Changes with the sliders."
-            : "Stadt in vier Viertel um das Rathaus geteilt. Punktzahl = Fläche der Blöcke, die alle Bedingungen oben erfüllen, + noch unbebaute Wohnbaufläche im Flächennutzungsplan (beides nach Abzug der Ausschlussflächen). Ändert sich mit den Reglern."}
+            ? "City split into four quadrants around the town hall. Score = area of blocks meeting all conditions above + still-unbuilt housing land in the land-use plan (both after exclusions). Blocks in the recommended quadrant are outlined in red on the map. Changes with the sliders."
+            : "Stadt in vier Viertel um das Rathaus geteilt. Punktzahl = Fläche der Blöcke, die alle Bedingungen oben erfüllen, + noch unbebaute Wohnbaufläche im Flächennutzungsplan (beides nach Abzug der Ausschlussflächen). Die Blöcke im empfohlenen Viertel sind auf der Karte rot umrandet. Ändert sich mit den Reglern."}
         </p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground">
-              <tr><th className="py-1 pr-3">{en ? "Quadrant" : "Viertel"}</th><th className="pr-3">{en ? "Suitable blocks" : "Geeignete Blöcke"}</th><th className="pr-3">{en ? "Suitable area" : "Geeignete Fläche"}</th><th className="pr-3">{en ? "Unbuilt plan land" : "Unbebautes Plan-Bauland"}</th><th className="pr-3">{en ? "Farmland" : "Acker"}</th><th className="pr-3">{en ? "Excluded" : "Ausgeschlossen"}</th><th>{en ? "Score" : "Punkte"}</th></tr>
-            </thead>
-            <tbody>
-              {quads.map((q, i) => (
-                <tr key={q.q} className={i === 0 && q.score > 0 ? "font-bold" : ""}>
-                  <td className="py-1 pr-3">{QS[q.q]} · {en ? QN[q.q].en : QN[q.q].de}</td>
-                  <td className="pr-3">{q.hits} / {q.blocks}</td>
-                  <td className="pr-3">{fmt(q.hitHa)} ha</td>
-                  <td className="pr-3">{fmt(q.planHa)} ha</td>
-                  <td className="pr-3">{fmt(q.farmHa)} ha</td>
-                  <td className="pr-3">{q.exclPct} %</td>
-                  <td>{q.score}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
       <p className="mt-3 border-l-2 border-primary bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         {en
