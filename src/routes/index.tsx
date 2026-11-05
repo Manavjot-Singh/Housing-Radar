@@ -81,9 +81,9 @@ function Index() {
                 <p className="kicker">Stadtteil</p>
                 <h2 className="text-3xl font-bold uppercase">{sel.name}</h2>
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div><dt className="text-muted-foreground">Wohnfläche / Kopf</dt><dd className="font-display text-2xl font-semibold">{sel.wohnflaecheProKopf != null ? `${fmt1(sel.wohnflaecheProKopf)} m²` : "–"}</dd></div>
-                  <div><dt className="text-muted-foreground">Leerstandsquote</dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${fmt1(sel.leerstandsquote)} %` : "keine Angabe"}</dd></div>
-                  <div><dt className="text-muted-foreground">Bebauungsdichte</dt><dd className="font-display text-2xl font-semibold">{fmt1(sel.bebautAnteil)} %</dd></div>
+                  <div><dt className="text-muted-foreground">Wohnfläche / Kopf</dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.wohnflaecheProKopf)} m²</dd></div>
+                  <div><dt className="text-muted-foreground">Leerstandsquote</dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${fmtAuto(sel.leerstandsquote)} %` : "keine Angabe"}</dd></div>
+                  <div><dt className="text-muted-foreground">Bebauungsdichte</dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>
                   <div><dt className="text-muted-foreground">Datenabdeckung</dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>
 
