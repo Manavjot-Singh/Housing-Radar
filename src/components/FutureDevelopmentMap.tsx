@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { CENTRE, evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
+import { CENTRE, evaluate, futureBlocks, quadrantOf, type Quadrant, type Check, type ExclKey, type Thresholds } from "@/lib/future";
 
 const EXCL_LABEL: Record<ExclKey, { de: string; en: string }> = {
   nsg: { de: "Naturschutzgebiet", en: "Nature reserve" },
@@ -23,11 +23,13 @@ function line(c: Check, label: string, unit: string, cond: string, en: boolean) 
   return `${mark} ${label}: ${num(c.value, en)} ${unit} <span style="opacity:.7">(${cond})</span>${note}`;
 }
 
-export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresholds }) {
+export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t: Thresholds; focus: Quadrant | null }) {
   const el = useRef<HTMLDivElement>(null);
   const layerRef = useRef<import("leaflet").GeoJSON | null>(null);
   const tRef = useRef(t);
   tRef.current = t;
+  const fRef = useRef(focus);
+  fRef.current = focus;
   const en = lang === "en";
 
   const restyle = () => {
@@ -39,9 +41,16 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
       const blk = futureBlocks[b.idx];
       if (!blk) return;
       const e = evaluate(blk, th);
-      (l as import("leaflet").Path).setStyle(e.pass
-        ? { color: "#14532d", weight: 1.5, fillColor: "#22c55e", fillOpacity: 0.55 }
-        : { color: "#64748b", weight: 0.5, fillColor: "#94a3b8", fillOpacity: 0.08 });
+      const inFocus = fRef.current != null && quadrantOf(blk) === fRef.current;
+      const path = l as import("leaflet").Path;
+      path.setStyle(e.pass
+        ? inFocus
+          ? { color: "#b91c1c", weight: 3, fillColor: "#16a34a", fillOpacity: 0.75 }
+          : { color: "#14532d", weight: 1.5, fillColor: "#22c55e", fillOpacity: 0.4 }
+        : inFocus
+          ? { color: "#b91c1c", weight: 1, fillColor: "#fca5a5", fillOpacity: 0.18 }
+          : { color: "#64748b", weight: 0.5, fillColor: "#94a3b8", fillOpacity: 0.08 });
+      if (inFocus && e.pass) path.bringToFront();
       const excl = Object.entries(blk.excl).map(([k, v]) => `${EXCL_LABEL[k as ExclKey][lang]} ${v} %`).join(", ");
       const html = [
         `<b>${blk.d}</b> · ${e.pass ? (en ? "matches all conditions" : "erfüllt alle Bedingungen") : (en ? "does not match" : "erfüllt nicht alle")}`,
@@ -91,7 +100,7 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(restyle, [t, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(restyle, [t, lang, focus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={el} className="h-[460px] w-full rounded-md" aria-label={en ? "Future development screening map" : "Karte zur Prüfung möglicher Entwicklungsflächen"} />;
 }
