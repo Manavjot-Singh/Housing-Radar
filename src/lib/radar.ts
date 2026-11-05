@@ -64,7 +64,7 @@ export const indicators: Record<
   },
   einwohnerJeGebaeude: {
     label: "Einwohner je Gebäude",
-    unit: "Personen",
+    unit: "Pers.",
     breaks: [1.05, 1.2, 1.8, 2.2],
     decimals: 1,
     gridSource: false,
@@ -100,6 +100,11 @@ export function formatValue(v: number | null, ind: Indicator): string {
 /** Formats a scale break or threshold number. */
 export function fmtNum(x: number) {
   return num(x, 2);
+}
+
+/** One-decimal German number, e.g. 1,9. */
+export function fmt1(x: number) {
+  return x.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 export function verdict(d: District): string {
