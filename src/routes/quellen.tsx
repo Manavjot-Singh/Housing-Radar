@@ -18,9 +18,9 @@ export const Route = createFileRoute("/quellen")({
 });
 
 const stepsDe = [
-  ["Laden", "Zensus-2022-Tabellen im 100-m-Gitter (Einwohner, Wohnfläche je Bewohner, Leerstandsquote), die Stadtteilgrenzen aus OpenStreetMap und die amtlichen ALKIS-Gebäudegrundrisse des LGLN."],
+  ["Laden", "Zensus-2022-Tabellen im 100-m-Gitter (Einwohner, Wohnfläche je Bewohner, Leerstandsquote, Anteil ab 65, Gebäude nach Wohnungszahl, Wohnungen nach Räumen), Supermärkte, Arztpraxen und Haltestellen aus OpenStreetMap, die Stadtteilgrenzen aus OpenStreetMap und die amtlichen ALKIS-Gebäudegrundrisse des LGLN."],
   ["Zusammenführen", "Jede Gitterzelle wird über ihren Mittelpunkt genau einem Stadtteil zugeordnet (EPSG:3035). Jedes Gebäude wird über seinen Schwerpunkt einem Stadtteil zugerechnet (EPSG:25832)."],
-  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Bebauungsdichte = Summe der Gebäudegrundflächen geteilt durch die Stadtteilfläche. Einwohner je Gebäude = Zensus-Bevölkerung dividiert durch die Zahl der ALKIS-Gebäude im Stadtteil."],
+  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Bebauungsdichte = Summe der Gebäudegrundflächen geteilt durch die Stadtteilfläche. Einwohner je Gebäude = Zensus-Bevölkerung dividiert durch die Zahl der ALKIS-Gebäude im Stadtteil. Räume pro Person = Summe der Räume (7+ als 7) geteilt durch Einwohner. Versorgung = Zahl der Angebote in Gehweite (Supermarkt/Arzt 600 m, Halt 400 m Luftlinie vom Zellmittelpunkt). Kombinierte Analysen: „hoch“ = obere zwei Farbstufen, „niedrig“ = untere zwei."],
   ["Datenschutz", "Es werden nur bereits amtlich geheimgehaltene Zensusdaten genutzt. Ergebnisse erscheinen nur auf Stadtteil- bzw. 100-m-Ebene, nie für Personen oder Haushalte."],
 ];
 
@@ -34,13 +34,16 @@ const limitsDe = [
   "Die Stadtteilgrenzen aus OpenStreetMap sind keine amtlichen Grenzen; sie sollten mit Lüne-GIS abgeglichen werden.",
   "Die Bebauungsdichte zählt nur die Grundfläche der Gebäude, nicht die Geschosse – sie ist ein erster Anhaltspunkt für Nachverdichtung, kein Ersatz für ein Baulückenkataster. Garagen und Nebengebäude sind enthalten.",
   "Die Zahl „Einwohner je Gebäude“ zählt alle amtlich erfassten Gebäude, also auch Garagen, Schuppen und Betriebsgebäude. Der tatsächliche Besatz je Wohngebäude ist deshalb höher; die Kennzahl ist ein Vergleichswert zwischen Stadtteilen, keine absolute Größe.",
+  "In kombinierten Analysen zählt für Quadrate ohne eigenen Wert der Stadtteilwert. Das betrifft vor allem den Leerstand: nur rund 11 % der Quadrate haben einen eigenen Wert.",
+  "Die Versorgung misst Luftlinie, keine Fußwege, und zählt nur Angebote innerhalb der Stadtgrenze-Box. Die Vollständigkeit von OpenStreetMap ist nicht garantiert.",
+  "Räume pro Person enthält auch Küchen ab 6 m² (Zensus-Definition) und bezieht sich auf alle Einwohner, auch in Wohnheimen.",
   "Einwohner- und Gebäudezahlen stammen aus verschiedenen Erhebungen mit unterschiedlichen Stichtagen (Zensus Mai 2022, ALKIS September 2026).",
 ];
 
 const stepsEn = [
-  ["Load", "Census 2022 tables on the 100 m grid (residents, living space per resident, vacancy rate), district boundaries from OpenStreetMap and the official ALKIS building footprints from LGLN."],
+  ["Load", "Census 2022 tables on the 100 m grid (residents, living space per resident, vacancy rate, share 65+, buildings by dwellings, dwellings by rooms), supermarkets, doctors and stops from OpenStreetMap, district boundaries from OpenStreetMap and the official ALKIS building footprints from LGLN."],
   ["Merge", "Each grid cell is assigned to exactly one district via its centre point (EPSG:3035). Each building is assigned to a district via its centroid (EPSG:25832)."],
-  ["Indicator", "Living space per resident per district = resident-weighted mean of the cells. Building density = total building footprint divided by district area. Residents per building = census population divided by the number of ALKIS buildings in the district."],
+  ["Indicator", "Living space per resident per district = resident-weighted mean of the cells. Building density = total building footprint divided by district area. Residents per building = census population divided by the number of ALKIS buildings in the district. Rooms per person = total rooms (7+ counted as 7) divided by residents. Amenities = number of services within walking distance (supermarket/doctor 600 m, stop 400 m straight line from the cell centre). Combined analyses: “high” = top two colour classes, “low” = bottom two."],
   ["Privacy", "Only census data that is already officially anonymised is used. Results appear only at district or 100 m level, never for persons or households."],
 ];
 
@@ -54,6 +57,9 @@ const limitsEn = [
   "The OpenStreetMap district boundaries are not official; they should be checked against Lüne-GIS.",
   "Building density counts only the footprint, not the number of storeys – it is a first indication of densification potential, not a replacement for a vacant-plot register. Garages and outbuildings are included.",
   "“Residents per building” counts all officially recorded buildings, including garages, sheds and commercial buildings. The real occupancy per residential building is therefore higher; the figure is for comparing districts, not an absolute value.",
+  "In combined analyses, squares without their own value use the district value. This mainly affects vacancy: only about 11 % of squares have their own value.",
+  "Amenities are measured as straight-line distance, not walking routes. OpenStreetMap completeness is not guaranteed.",
+  "Rooms per person includes kitchens of 6 m² or more (census definition) and refers to all residents, including those in shared accommodation.",
   "Resident and building figures come from different surveys with different reference dates (census May 2022, ALKIS September 2026).",
 ];
 
