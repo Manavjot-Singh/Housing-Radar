@@ -166,12 +166,6 @@ export const analyses: Analysis[] = [
     en: { title: "Vacancy with poor amenities", question: "Where are dwellings empty while supermarket, doctor or stop are missing?", action: "Urban development: improve amenities and transport so empty homes become attractive again." },
   },
   {
-    id: "leerstand-aktivieren",
-    conditions: [{ ind: "leerstandsquote", dir: "high" }, { ind: "versorgung", dir: "high" }],
-    de: { title: "Leerstand an guter Lage", question: "Wo stehen Wohnungen leer, obwohl alles zu Fuß erreichbar ist?", action: "Schnell wirksam: Eigentümer ansprechen, Leerstand aktivieren (Sanierungsberatung, Vermittlung)." },
-    en: { title: "Vacancy in well-served areas", question: "Where are dwellings empty although everything is within walking distance?", action: "Quick win: contact owners and bring vacant homes back to the market (renovation advice, letting support)." },
-  },
-  {
     id: "wohnungstausch",
     conditions: [{ ind: "wohnflaecheProKopf", dir: "high" }, { ind: "anteil65", dir: "high" }],
     de: { title: "Viel Fläche, ältere Bewohner", question: "Wo leben viele Ältere auf viel Wohnfläche?", action: "Wohnungstausch und altersgerechte Wohnungen in der Nähe anbieten – frei werdende Häuser für Familien." },
