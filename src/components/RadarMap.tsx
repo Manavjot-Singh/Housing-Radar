@@ -36,9 +36,10 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
       const Lf = (mod.default ?? mod) as typeof L;
       libRef.current = Lf;
       const map = Lf.map(el.current, { zoomControl: true, attributionControl: true }).setView([53.245, 10.41], 13);
-      Lf.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
-        attribution: "© OpenStreetMap-Mitwirkende © CARTO · Daten: Zensus 2022, Destatis",
-        maxZoom: 18,
+      Lf.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap-Mitwirkende · Daten: Zensus 2022, Destatis",
+        maxZoom: 19,
+        opacity: 0.45,
       }).addTo(map);
       mapRef.current = map;
       render();
