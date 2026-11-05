@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import "leaflet/dist/leaflet.css";
 import { evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
 
