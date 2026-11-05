@@ -74,6 +74,29 @@ async function alkis(b: number[], ags: string) {
   return { buildings: out, truncated };
 }
 
+/** ALKIS cadastral districts (Gemarkungen), assembled from their Flur parcels inside the municipality. */
+async function alkisDistricts(b: number[], ags: string) {
+  const [w, s, e, n] = b;
+  const q = new URLSearchParams({ SERVICE: "WFS", VERSION: "2.0.0", REQUEST: "GetFeature", TYPENAMES: "ave:KatasterBezirk", BBOX: `${s},${w},${n},${e},urn:ogc:def:crs:EPSG::4326`, SRSNAME: "urn:ogc:def:crs:EPSG::4326", COUNT: "10000" });
+  const r = await fetch(`${ALKIS}?${q}`, { headers: UA });
+  if (!r.ok) throw new Error(`ALKIS Gemarkungen: HTTP ${r.status}`);
+  const by = new Map<string, Poly[]>();
+  const parts = (await r.text()).split("<wfs:member>");
+  for (let i = 1; i < parts.length; i++) {
+    const m = parts[i]!;
+    if (/<art>Gemarkung</.test(m) || /<gmdschl>([^<]+)</.exec(m)?.[1] !== ags) continue;
+    const name = /<ueboname>([^<]+)</.exec(m)?.[1] ?? /<name>([^<]+)</.exec(m)?.[1] ?? "?";
+    const list = by.get(name) ?? by.set(name, []).get(name)!;
+    for (const ex of m.matchAll(/<gml:exterior>[\s\S]*?<gml:posList>([^<]+)<\/gml:posList>/g)) {
+      const nums = ex[1]!.trim().split(/\s+/).map(Number);
+      const ring: Ring = [];
+      for (let k = 0; k + 1 < nums.length; k += 2) ring.push([nums[k + 1]!, nums[k]!]);
+      if (ring.length > 3) list.push([ring]);
+    }
+  }
+  return [...by.entries()].map(([name, polys]) => ({ name, polys }));
+}
+
 /** ALKIS actual land use (ave:Nutzung), only the classes used as exclusion areas. */
 async function alkisLandUse(b: number[]) {
   const [w, s, e, n] = b;
@@ -114,11 +137,12 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   const area = `area(${3600000000 + input.osmId})->.a;`;
 
   // ---- everything live, in parallel
-  // One Overpass call (districts + amenities) to stay under its rate limit.
-  const osmP = overpass(`[out:json][timeout:60];${area}(rel(area.a)["boundary"="administrative"]["admin_level"~"^(9|10)$"];nwr(area.a)["shop"~"^(supermarket|convenience|bakery)$"];nwr(area.a)["amenity"~"^(doctors|clinic)$"];nwr(area.a)["healthcare"="doctor"];node(area.a)["highway"="bus_stop"];nwr(area.a)["railway"~"^(station|halt)$"];);out center tags;`)
+  // Overpass only for amenities; it is the slowest and least reliable source, so failures are tolerated.
+  const osmP = overpass(`[out:json][timeout:60];${area}(nwr(area.a)["shop"~"^(supermarket|convenience|bakery)$"];nwr(area.a)["amenity"~"^(doctors|clinic)$"];nwr(area.a)["healthcare"="doctor"];node(area.a)["highway"="bus_stop"];nwr(area.a)["railway"~"^(station|halt)$"];);out center tags;`)
     .catch(() => { notes.push("noOsm"); return [] as OsmEl[]; });
-  const [osmEls, landUse, nsg, lsg, alk, cells] = await Promise.all([
+  const [amenEls, gemarkungen, landUse, nsg, lsg, alk, cells] = await Promise.all([
     osmP,
+    alkisDistricts(bb, input.ags),
     alkisLandUse(bb),
     protectedAreas("SchutzgebieteNI:ProtectedSites_IUCN_HabitatSpeciesManagementArea_Surface", bb, () => true),
     protectedAreas("SchutzgebieteNI:ProtectedSites_IUCN_ProtectedLandscapeOrSeascape_Surface", bb,
@@ -139,24 +163,10 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   if (alk.truncated) notes.push("buildingsTruncated");
 
   // ---- districts: pick the admin level that covers most residents, else the whole town
-  const distEls = osmEls.filter((x) => x.type === "relation" && x.tags?.admin_level);
-  const amenEls = osmEls.filter((x) => !(x.type === "relation" && x.tags?.admin_level));
-  const cand = distEls.filter((x) => x.tags?.name).map((x) => ({ id: x.id, name: x.tags!.name!, lvl: x.tags!.admin_level! }));
-  let districts: { id: number; name: string; polys: Poly[]; test: (x: number, y: number) => boolean }[] = [];
-  if (cand.length >= 2) {
-    const geo = await nominatimPolys(cand.map((c) => c.id));
-    const totalEw = cells.reduce((a, c) => a + (c[2] ?? 0), 0);
-    let best: typeof districts = [], bestCov = 0;
-    for (const lvl of ["10", "9"]) {
-      const ds = cand.filter((c) => c.lvl === lvl).map((c) => ({ ...c, polys: geo.get(c.id) ?? [] }))
-        .filter((d) => d.polys.length && (() => { const [a, b, c2, d2] = polyBBox(d.polys); return inTown((a + c2) / 2, (b + d2) / 2); })())
-        .map((d) => ({ id: d.id, name: d.name, polys: d.polys, test: makeTester(d.polys) }));
-      if (ds.length < 2) continue;
-      const cov = cells.reduce((a, c) => a + (ds.some((d) => d.test(c[0]!, c[1]!)) ? c[2] ?? 0 : 0), 0) / (totalEw || 1);
-      if (cov > bestCov) { bestCov = cov; best = ds; }
-    }
-    if (bestCov >= 0.8) districts = best;
-  }
+  // ---- districts: official cadastral districts (Gemarkungen); a single one means the whole town
+  let districts = gemarkungen.length >= 2
+    ? gemarkungen.map((g, i) => ({ id: i + 1, name: g.name, polys: g.polys, test: makeTester(g.polys) }))
+    : [];
   const rest = { id: input.osmId, name: input.name, polys: boundary, test: inTown };
   if (!districts.length) { districts = [rest]; notes.push("noDistricts"); }
   const districtOf = (x: number, y: number) => districts.find((d) => d.test(x, y)) ?? null;
