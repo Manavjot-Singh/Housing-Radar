@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FutureDevelopmentMap } from "@/components/FutureDevelopmentMap";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, quadrantStats, type Quadrant, type Thresholds } from "@/lib/future";
+import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, edgeSuggestions, type Thresholds } from "@/lib/future";
 import { useLang } from "@/lib/i18n";
 
 export function FutureDevelopmentPlans() {
@@ -11,15 +11,12 @@ export function FutureDevelopmentPlans() {
   const [t, setT] = useState<Thresholds>(DEFAULT_THRESHOLDS);
   const hits = useMemo(() => futureBlocks.filter((b) => evaluate(b, t).pass), [t]);
   const ha = hits.reduce((s, b) => s + b.freeHa, 0);
-  const quads = useMemo(() => quadrantStats(futureBlocks, t), [t]);
-  const QN: Record<Quadrant, { de: string; en: string }> = {
-    NW: { de: "Nordwesten", en: "north-west" }, NE: { de: "Nordosten", en: "north-east" },
-    SW: { de: "Südwesten", en: "south-west" }, SE: { de: "Südosten", en: "south-east" },
-  };
-  const QS: Record<Quadrant, string> = { NW: "NW", NE: en ? "NE" : "NO", SW: "SW", SE: en ? "SE" : "SO" };
-  const best = quads[0]!, second = quads[1]!;
-  const districts = [...new Set(hits.map((b) => b.d))].sort();
   const fmt = (x: number) => x.toLocaleString(en ? "en-GB" : "de-DE", { maximumFractionDigits: 0 });
+  const edge = useMemo(() => edgeSuggestions(futureBlocks, t), [t]);
+  const top = edge.slice(0, 3);
+  const focus = useMemo(() => new Set(top.flatMap((s) => s.blockIds)), [edge]); // eslint-disable-line react-hooks/exhaustive-deps
+  const names = top.map((s) => `${s.district} (${fmt(s.ha)} ha)`).join(", ");
+  const districts = [...new Set(hits.map((b) => b.d))].sort();
 
   const sliders: { key: "living" | "vacancy" | "coverage"; label: string; min: number; max: number; step: number; show: string }[] = [
     { key: "living", label: en ? "Living space per resident below" : "Wohnfläche je Einwohner unter", min: 30, max: 70, step: 1, show: `${t.living} m²` },
@@ -61,22 +58,22 @@ export function FutureDevelopmentPlans() {
       </div>
 
       <div className="mt-3 overflow-hidden rounded-md border">
-        <FutureDevelopmentMap lang={lang} t={t} focus={best.score > 0 ? best.q : null} />
+        <FutureDevelopmentMap lang={lang} t={t} focus={focus} />
       </div>
       <div className="mt-4 rounded-md border p-4">
         <p className="kicker">{en ? "Direction for outward growth" : "Richtung für Stadterweiterung"}</p>
-        {best.score > 0 ? (
+        {top.length > 0 ? (
           <p className="mt-1 text-lg font-bold">
-            {en ? `Recommended: expand towards the ${QN[best.q].en}` : `Empfehlung: Wachstum Richtung ${QN[best.q].de}`}
-            {second.score > 0 && <span className="text-base font-normal text-muted-foreground">{en ? `, then ${QN[second.q].en}` : `, danach ${QN[second.q].de}`}</span>}
+            {en ? "Suggested: grow outwards at the city edge near " : "Empfehlung: Stadt nach außen erweitern bei "}
+            <span className="font-normal">{names}</span>
           </p>
         ) : (
-          <p className="mt-1 text-lg font-bold">{en ? "No quadrant has suitable land with these settings" : "Mit diesen Einstellungen hat kein Viertel geeignete Fläche"}</p>
+          <p className="mt-1 text-lg font-bold">{en ? "No edge area is suitable with these settings" : "Mit diesen Einstellungen ist kein Stadtrand-Bereich geeignet"}</p>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           {en
-            ? "City split into four quadrants around the town hall. Score = area of blocks meeting all conditions above + still-unbuilt housing land in the land-use plan (both after exclusions). Blocks in the recommended quadrant are outlined in red on the map. Changes with the sliders."
-            : "Stadt in vier Viertel um das Rathaus geteilt. Punktzahl = Fläche der Blöcke, die alle Bedingungen oben erfüllen, + noch unbebaute Wohnbaufläche im Flächennutzungsplan (beides nach Abzug der Ausschlussflächen). Die Blöcke im empfohlenen Viertel sind auf der Karte rot umrandet. Ändert sich mit den Reglern."}
+            ? "Only blocks on the city edge count. A block qualifies if it meets all conditions above or holds still-unbuilt housing land from the land-use plan (both after exclusions). The three districts with the most such area are suggested and their blocks outlined in red on the map. Changes with the sliders."
+            : "Gezählt werden nur Blöcke am Stadtrand. Ein Block zählt, wenn er alle Bedingungen oben erfüllt oder noch unbebaute Wohnbaufläche aus dem Flächennutzungsplan enthält (beides nach Abzug der Ausschlussflächen). Vorgeschlagen werden die drei Stadtteile mit der meisten solchen Fläche; ihre Blöcke sind auf der Karte rot umrandet. Ändert sich mit den Reglern."}
         </p>
       </div>
       <p className="mt-3 border-l-2 border-primary bg-muted/40 px-3 py-2 text-xs text-muted-foreground">

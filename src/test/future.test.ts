@@ -37,18 +37,20 @@ describe("land-use plan filter", () => {
   });
 });
 
-import { quadrantOf, quadrantStats } from "@/lib/future";
-describe("quadrants", () => {
-  it("assigns a block north-east of the town hall to NE", () => {
-    // ix 15 → lon 10.41375, iy 33 → lat 53.25075
-    expect(quadrantOf({ ...base, id: "X|15|33" })).toBe("NE");
-    expect(quadrantOf({ ...base, id: "X|10|30" })).toBe("SW");
+import { edgeBlocks, edgeSuggestions } from "@/lib/future";
+describe("city-edge suggestions", () => {
+  const T = { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false };
+  // 3x3 tiles: only the centre tile is surrounded on all sides
+  const grid = [0, 1, 2].flatMap((x) => [0, 1, 2].map((y) => ({ ...base, id: `D|${x}|${y}`, d: x === 0 ? "West" : "Rest" })));
+  it("treats only tiles with a missing neighbour as edge", () => {
+    const e = edgeBlocks(grid);
+    expect(e.has("D|1|1")).toBe(false);
+    expect(e.size).toBe(8);
   });
-  it("ranks the quadrant with more suitable + plan land first", () => {
-    const a = { ...base, id: "X|15|33", freeHa: 5, resHa: 0 };
-    const b = { ...base, id: "X|10|30", freeHa: 5, resHa: 8 };
-    const r = quadrantStats([a, b], { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false });
-    expect(r[0]!.q).toBe("SW");
-    expect(r[0]!.score).toBe(13);
+  it("never suggests an inner block and ranks districts by suitable ha", () => {
+    const r = edgeSuggestions(grid, T);
+    expect(r.flatMap((s) => s.blockIds)).not.toContain("D|1|1");
+    expect(r[0]!.district).toBe("Rest"); // 5 edge tiles vs 3
+    expect(r[0]!.ha).toBe(50);
   });
 });

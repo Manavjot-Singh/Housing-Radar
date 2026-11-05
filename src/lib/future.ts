@@ -1,5 +1,5 @@
 import zukunft from "@/data/zukunft-bloecke.json";
-import { districtByName, BLOCK_LON0, BLOCK_LAT0, BLOCK_DLON, BLOCK_DLAT } from "@/lib/radar";
+import { districtByName } from "@/lib/radar";
 
 export type ExclKey = "nsg" | "lsg" | "flood" | "forest" | "cemetery" | "allot" | "parking" | "green";
 export type FutureBlock = {
@@ -30,45 +30,40 @@ export function evaluate(b: FutureBlock, t: Thresholds): Evaluation {
   return { living, vacancy, coverage, pass };
 }
 
-/* ---------- Quadrants & outward-growth direction ---------- */
+/* ---------- Outward growth at the city edge ---------- */
 
-/** City centre: Lüneburg town hall (Am Markt). */
-export const CENTRE = { lat: 53.2486, lon: 10.4072 };
-export type Quadrant = "NW" | "NE" | "SW" | "SE";
-export const QUADRANTS: Quadrant[] = ["NW", "NE", "SW", "SE"];
-
-export function blockCentre(b: FutureBlock) {
+function tile(b: FutureBlock) {
   const [, ix = 0, iy = 0] = b.id.split("|").map(Number);
-  return { lon: BLOCK_LON0 + (ix + 0.5) * BLOCK_DLON, lat: BLOCK_LAT0 + (iy + 0.5) * BLOCK_DLAT };
-}
-export function quadrantOf(b: FutureBlock): Quadrant {
-  const c = blockCentre(b);
-  return `${c.lat >= CENTRE.lat ? "N" : "S"}${c.lon >= CENTRE.lon ? "E" : "W"}` as Quadrant;
+  return { ix, iy };
 }
 
-export type QuadrantStat = {
-  q: Quadrant; blocks: number; hits: number; hitHa: number; planHa: number;
-  farmHa: number; exclPct: number; score: number;
-};
+/** A block is on the city edge when at least one of its 4 neighbouring tiles lies outside the city. */
+export function edgeBlocks(blocks: FutureBlock[]): Set<string> {
+  const have = new Set(blocks.map((b) => { const { ix, iy } = tile(b); return `${ix}|${iy}`; }));
+  const out = new Set<string>();
+  for (const b of blocks) {
+    const { ix, iy } = tile(b);
+    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !have.has(`${ix + dx!}|${iy + dy!}`))) out.add(b.id);
+  }
+  return out;
+}
+
+export type EdgeSuggestion = { district: string; ha: number; blockIds: string[] };
 
 /**
- * Score = area of blocks passing all conditions + unbuilt land-use-plan housing land.
- * Both count equally (ha); exclusions are already subtracted from both.
+ * Edge blocks qualify when they meet all conditions or hold still-unbuilt land-use-plan housing land.
+ * Districts are ranked by that suitable area (ha).
  */
-export function quadrantStats(blocks: FutureBlock[], t: Thresholds): QuadrantStat[] {
-  const out = QUADRANTS.map((q) => ({ q, blocks: 0, hits: 0, hitHa: 0, planHa: 0, farmHa: 0, exclPct: 0, score: 0 }));
-  const area: Record<Quadrant, number> = { NW: 0, NE: 0, SW: 0, SE: 0 };
+export function edgeSuggestions(blocks: FutureBlock[], t: Thresholds): EdgeSuggestion[] {
+  const edge = edgeBlocks(blocks);
+  const by = new Map<string, EdgeSuggestion>();
   for (const b of blocks) {
-    const s = out[QUADRANTS.indexOf(quadrantOf(b))]!;
-    s.blocks++;
-    if (evaluate(b, t).pass) { s.hits++; s.hitHa += b.freeHa; }
-    s.planHa += b.resHa;
-    s.farmHa += (b.farmPct / 100) * b.freeHa;
-    s.exclPct += b.exclPct; area[s.q]++;
+    if (!edge.has(b.id) || !b.g) continue;
+    const pass = evaluate(b, t).pass;
+    const ha = (pass ? b.freeHa : 0) + (pass ? 0 : b.resHa);
+    if (ha <= 0) continue;
+    const s = by.get(b.d) ?? { district: b.d, ha: 0, blockIds: [] };
+    s.ha += ha; s.blockIds.push(b.id); by.set(b.d, s);
   }
-  for (const s of out) {
-    s.exclPct = area[s.q] ? Math.round(s.exclPct / area[s.q]) : 0;
-    s.score = Math.round(s.hitHa + s.planHa);
-  }
-  return out.sort((a, b) => b.score - a.score);
+  return [...by.values()].sort((a, b) => b.ha - a.ha);
 }
