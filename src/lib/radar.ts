@@ -161,7 +161,7 @@ export function cellOwn(c: Cell, ind: Indicator): number | null {
 /** The cell's value with the district value as fallback, used for combined analyses. */
 export function cellValue(c: Cell, ind: Indicator): number | null {
   const own = cellOwn(c, ind);
-  if (own != null) return own;
+  if (own != null || ind === "gewerbeLeerstand") return own;
   const d = districtByName.get(c[9]);
   return d ? value(d, ind) : null;
 }
@@ -199,7 +199,7 @@ export function blockOwn(b: Block, ind: Indicator): number | null {
 /** The block's value with the district value as fallback. */
 export function blockValueOf(b: Block, ind: Indicator): number | null {
   const own = blockOwn(b, ind);
-  if (own != null) return own;
+  if (own != null || ind === "gewerbeLeerstand") return own;
   const d = districtByName.get(b[10]);
   return d ? value(d, ind) : null;
 }
@@ -211,20 +211,22 @@ export function blockValue(c: Cell, ind: Indicator): number | null {
 }
 
 export type Dir = "high" | "low";
-export type Condition = { ind: Indicator; dir: Dir };
+/** `min` overrides the default "high" threshold, e.g. for an analysis that needs a lower bar. */
+export type Condition = { ind: Indicator; dir: Dir; min?: number };
 
 /** High = top two colour classes, low = bottom two. */
 export function meets(v: number | null, cond: Condition): boolean | null {
   if (v == null) return null;
   const b = indicators[cond.ind].breaks;
-  return cond.dir === "high" ? v >= b[2]! : v < b[1]!;
+  return cond.dir === "high" ? v >= (cond.min ?? b[2]!) : v < b[1]!;
 }
 
 /** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 3" for low. */
 export function thresholdText(cond: Condition, en = false): string {
   const i = indicators[cond.ind];
   const u = en && i.unit === "Pers." ? "ppl" : i.unit;
-  const x = cond.dir === "high" ? i.breaks[2]! : i.breaks[1]!;
+  const x = cond.dir === "high" ? (cond.min ?? i.breaks[2]!) : i.breaks[1]!;
+  if (cond.ind === "gewerbeLeerstand") return cond.dir === "high" ? (en ? "≥ 1 unit within 250 m" : "≥ 1 Objekt im Umkreis von 250 m") : (en ? "none nearby" : "keins in der Nähe");
   if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "all 3 nearby" : "alle 3 in der Nähe") : (en ? "0–1 of 3 nearby" : "0–1 von 3 in der Nähe");
   return `${cond.dir === "high" ? "≥" : "<"} ${fmtNum(x)}${u ? " " + u : ""}`;
 }
@@ -247,6 +249,12 @@ export const analyses: Analysis[] = [
     conditions: [{ ind: "wohnflaecheProKopf", dir: "high" }, { ind: "anteil65", dir: "high" }],
     de: { title: "Viel Fläche, ältere Bewohner", question: "Wo leben viele Ältere auf viel Wohnfläche?", action: "Wohnungstausch und altersgerechte Wohnungen in der Nähe anbieten – frei werdende Häuser für Familien." },
     en: { title: "Large homes, older residents", question: "Where do many older people live on a lot of space?", action: "Offer home swaps and age-friendly flats nearby – freeing up houses for families." },
+  },
+  {
+    id: "wohn-gewerbe-leerstand",
+    conditions: [{ ind: "leerstandsquote", dir: "high", min: 10 }, { ind: "gewerbeLeerstand", dir: "high" }],
+    de: { title: "Wohn- und Gewerbeleerstand", question: "Wo stehen Wohnungen leer und zugleich Läden oder Gewerbeflächen?", action: "Gewerbeleerstand abbauen: leere Läden für Community-Projekte, Pop-up-Nutzungen oder Umbau zu Wohnungen öffnen – eine belebte Straße macht auch die Wohnungen darüber wieder gefragt." },
+    en: { title: "Housing and commercial vacancy", question: "Where are dwellings empty and shops or commercial units too?", action: "Reduce commercial vacancy: open empty shops for community projects, pop-ups or conversion to flats – a lively street makes the homes above attractive again." },
   },
 ];
 
