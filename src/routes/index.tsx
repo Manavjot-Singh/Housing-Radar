@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { RadarMap } from "@/components/RadarMap";
 import { SiteHeader } from "@/components/SiteHeader";
-import { cityAvg, cityPopulation, districts, fmt1, fmtNum, formatValue, indicators, scaleClass, value, verdict, type Indicator } from "@/lib/radar";
+import { cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtNum, formatValue, indicators, scaleClass, value, verdict, type Indicator } from "@/lib/radar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,7 +37,7 @@ function Index() {
           <p className="kicker">Leuphana AI Hackathon · Challenge 4</p>
           <h1 className="mt-1 text-4xl font-bold uppercase leading-none sm:text-5xl">Wo wird Wohnraum in Lüneburg ungleich genutzt?</h1>
           <p className="mt-3 text-muted-foreground">
-            Im Lüneburger Schnitt hat jeder Einwohner <strong className="text-foreground">{fmt1(cityAvg)} m²</strong> Wohnfläche
+            Im Lüneburger Schnitt hat jeder Einwohner <strong className="text-foreground">{fmtAuto(cityAvg)} m²</strong> Wohnfläche
             ({cityPopulation.toLocaleString("de-DE")} Einwohner in 17 Stadtteilen). Vier öffentliche Datensätze, auf
             Stadtteile zusammengeführt, ganz ohne personenbezogene Daten.
           </p>
