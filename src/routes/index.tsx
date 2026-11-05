@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { RadarMap, type AmenityKey } from "@/components/RadarMap";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useLang, t } from "@/lib/i18n";
 import {
-  analyses, thresholdText, blocks, blockValueOf, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, meets, scaleClass, value, verdict,
+  analyses, thresholdText, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
   type Condition, type Dir, type Indicator,
 } from "@/lib/radar";
 
@@ -69,20 +69,6 @@ function Index() {
     setAnalysisId(null);
     setConditions([]);
   }
-
-  // share of residents per district living in 500 m blocks meeting all conditions
-  const hits = useMemo(() => {
-    if (!combo) return [];
-    const m = new Map<string, { hit: number; all: number }>();
-    for (const b of blocks) {
-      if (!b[1]) continue;
-      const e = m.get(b[10]) ?? { hit: 0, all: 0 };
-      e.all += b[1];
-      if (conditions.every((k) => meets(blockValueOf(b, k.ind), k) === true)) e.hit += b[1];
-      m.set(b[10], e);
-    }
-    return [...m.entries()].map(([name, e]) => ({ name, share: (e.hit / e.all) * 100, people: e.hit })).sort((a, b) => b.share - a.share);
-  }, [combo, conditions]);
 
   const sel = districts.find((d) => d.name === selected);
   const sorted = single ? [...districts].sort((a, b) => (value(b, single) ?? -1) - (value(a, single) ?? -1)) : [];
@@ -231,30 +217,10 @@ function Index() {
           </div>
 
           <aside className="flex flex-col gap-4">
-            {combo && (
+            {analysis && (
               <section className="rounded-md border bg-card p-4">
-                {analysis && (
-                  <>
-                    <p className="kicker">{tx.whatToDo}</p>
-                    <p className="mt-1 border-l-2 border-primary pl-3 text-sm">{analysis[lang].action}</p>
-                  </>
-                )}
-                <p className={`kicker ${analysis ? "mt-4" : ""}`}>{tx.hits}</p>
-                <p className="mb-2 text-xs text-muted-foreground">{tx.hitsHint}</p>
-                <ul className="space-y-1">
-                  {hits.map((h) => (
-                    <li key={h.name}>
-                      <button onClick={() => setSelected(h.name)} className={`flex w-full items-center gap-2 rounded-sm px-1 py-0.5 text-left text-sm hover:bg-muted ${selected === h.name ? "bg-accent" : ""}`}>
-                        <span className="w-32 shrink-0 truncate">{h.name}</span>
-                        <span className="h-2.5 flex-1 overflow-hidden rounded-sm bg-muted">
-                          <span className="block h-full bg-scale-5" style={{ width: `${h.share}%` }} />
-                        </span>
-                        <span className="w-28 shrink-0 whitespace-nowrap text-right font-mono text-xs">{fmtAuto(h.share)} % · {h.people.toLocaleString(loc)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-xs text-muted-foreground">{tx.fallbackNote}</p>
+                <p className="kicker">{tx.whatToDo}</p>
+                <p className="mt-1 border-l-2 border-primary pl-3 text-sm">{analysis[lang].action}</p>
               </section>
             )}
 

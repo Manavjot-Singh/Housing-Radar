@@ -48,8 +48,7 @@ export const t = {
     high: "hoch", low: "niedrig", reset: "Zurücksetzen",
     allMet: (n: number) => `alle ${n} Bedingungen erfüllt`, oneMissing: "eine Bedingung fehlt", fewer: "ohne Farbe = weniger Bedingungen erfüllt",
     howToRead: "So liest du die Karte", markedWhen: "Dunkelrot markiert sind 500-m-Blöcke, in denen alle diese Bedingungen gleichzeitig zutreffen. Hellblau: eine Bedingung fehlt. Fahr mit der Maus über einen Block, um ✔/✘ je Bedingung zu sehen.",
-    hits: "Treffer je Stadtteil", hitsHint: "Anteil der Einwohner, die in 500-m-Blöcken mit allen Bedingungen wohnen.",
-    whatToDo: "Was die Stadt tun kann", fallbackNote: "Wo ein Block keinen eigenen Wert hat (z. B. Leerstand), zählt der Stadtteilwert.",
+    whatToDo: "Was die Stadt tun kann",
     old: "Ab 65 Jahre", efh: "Ein-/Zweifamilienhäuser", rooms: "Räume / Person", amen: "Versorgung",
   },
   en: {
@@ -70,8 +69,7 @@ export const t = {
     high: "high", low: "low", reset: "Reset",
     allMet: (n: number) => `all ${n} conditions met`, oneMissing: "one condition missing (light)", fewer: "no colour = fewer conditions met",
     howToRead: "How to read the map", markedWhen: "Dark red marks 500 m blocks where all of these conditions apply at once. Light blue: one condition is missing. Hover over a block to see ✔/✘ per condition.",
-    hits: "Matches per district", hitsHint: "Share of residents living in 500 m blocks that meet all conditions.",
-    whatToDo: "What the city can do", fallbackNote: "Where a block has no value of its own (e.g. vacancy), the district value is used.",
+    whatToDo: "What the city can do",
     old: "Aged 65+", efh: "Detached/two-family", rooms: "Rooms / person", amen: "Amenities",
   },
 };
