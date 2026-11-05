@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FutureDevelopmentMap } from "@/components/FutureDevelopmentMap";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, type Thresholds } from "@/lib/future";
+import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, quadrantStats, type Quadrant, type Thresholds } from "@/lib/future";
 import { useLang } from "@/lib/i18n";
 
 export function FutureDevelopmentPlans() {
@@ -11,6 +11,13 @@ export function FutureDevelopmentPlans() {
   const [t, setT] = useState<Thresholds>(DEFAULT_THRESHOLDS);
   const hits = useMemo(() => futureBlocks.filter((b) => evaluate(b, t).pass), [t]);
   const ha = hits.reduce((s, b) => s + b.freeHa, 0);
+  const quads = useMemo(() => quadrantStats(futureBlocks, t), [t]);
+  const QN: Record<Quadrant, { de: string; en: string }> = {
+    NW: { de: "Nordwesten", en: "north-west" }, NE: { de: "Nordosten", en: "north-east" },
+    SW: { de: "Südwesten", en: "south-west" }, SE: { de: "Südosten", en: "south-east" },
+  };
+  const QS: Record<Quadrant, string> = { NW: "NW", NE: en ? "NE" : "NO", SW: "SW", SE: en ? "SE" : "SO" };
+  const best = quads[0], second = quads[1];
   const districts = [...new Set(hits.map((b) => b.d))].sort();
   const fmt = (x: number) => x.toLocaleString(en ? "en-GB" : "de-DE", { maximumFractionDigits: 0 });
 
@@ -55,6 +62,42 @@ export function FutureDevelopmentPlans() {
 
       <div className="mt-3 overflow-hidden rounded-md border">
         <FutureDevelopmentMap lang={lang} t={t} />
+      </div>
+      <div className="mt-4 rounded-md border p-4">
+        <p className="kicker">{en ? "Direction for outward growth" : "Richtung für Stadterweiterung"}</p>
+        {best.score > 0 ? (
+          <p className="mt-1 text-lg font-bold">
+            {en ? `Recommended: expand towards the ${QN[best.q].en}` : `Empfehlung: Wachstum Richtung ${QN[best.q].de}`}
+            {second.score > 0 && <span className="text-base font-normal text-muted-foreground">{en ? `, then ${QN[second.q].en}` : `, danach ${QN[second.q].de}`}</span>}
+          </p>
+        ) : (
+          <p className="mt-1 text-lg font-bold">{en ? "No quadrant has suitable land with these settings" : "Mit diesen Einstellungen hat kein Viertel geeignete Fläche"}</p>
+        )}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {en
+            ? "City split into four quadrants around the town hall. Score = area of blocks meeting all conditions above + still-unbuilt housing land in the land-use plan (both after exclusions). Changes with the sliders."
+            : "Stadt in vier Viertel um das Rathaus geteilt. Punktzahl = Fläche der Blöcke, die alle Bedingungen oben erfüllen, + noch unbebaute Wohnbaufläche im Flächennutzungsplan (beides nach Abzug der Ausschlussflächen). Ändert sich mit den Reglern."}
+        </p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr><th className="py-1 pr-3">{en ? "Quadrant" : "Viertel"}</th><th className="pr-3">{en ? "Suitable blocks" : "Geeignete Blöcke"}</th><th className="pr-3">{en ? "Suitable area" : "Geeignete Fläche"}</th><th className="pr-3">{en ? "Unbuilt plan land" : "Unbebautes Plan-Bauland"}</th><th className="pr-3">{en ? "Farmland" : "Acker"}</th><th className="pr-3">{en ? "Excluded" : "Ausgeschlossen"}</th><th>{en ? "Score" : "Punkte"}</th></tr>
+            </thead>
+            <tbody>
+              {quads.map((q, i) => (
+                <tr key={q.q} className={i === 0 && q.score > 0 ? "font-bold" : ""}>
+                  <td className="py-1 pr-3">{QS[q.q]} · {en ? QN[q.q].en : QN[q.q].de}</td>
+                  <td className="pr-3">{q.hits} / {q.blocks}</td>
+                  <td className="pr-3">{fmt(q.hitHa)} ha</td>
+                  <td className="pr-3">{fmt(q.planHa)} ha</td>
+                  <td className="pr-3">{fmt(q.farmHa)} ha</td>
+                  <td className="pr-3">{q.exclPct} %</td>
+                  <td>{q.score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       <p className="mt-3 border-l-2 border-primary bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         {en

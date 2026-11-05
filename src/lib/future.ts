@@ -1,5 +1,5 @@
 import zukunft from "@/data/zukunft-bloecke.json";
-import { districtByName } from "@/lib/radar";
+import { districtByName, BLOCK_LON0, BLOCK_LAT0, BLOCK_DLON, BLOCK_DLAT } from "@/lib/radar";
 
 export type ExclKey = "nsg" | "lsg" | "flood" | "forest" | "cemetery" | "allot" | "parking" | "green";
 export type FutureBlock = {
@@ -31,7 +31,6 @@ export function evaluate(b: FutureBlock, t: Thresholds): Evaluation {
 }
 
 /* ---------- Quadrants & outward-growth direction ---------- */
-import { BLOCK_LON0, BLOCK_LAT0, BLOCK_DLON, BLOCK_DLAT } from "@/lib/radar";
 
 /** City centre: Lüneburg town hall (Am Markt). */
 export const CENTRE = { lat: 53.2486, lon: 10.4072 };
