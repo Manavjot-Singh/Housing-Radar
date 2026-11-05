@@ -41,7 +41,7 @@ function Index() {
   const [selected, setSelected] = useState<string | null>("Wilschenbruch");
 
   const L = (k: Indicator) => (en ? indicators[k].labelEn : indicators[k].label);
-  const unit = (k: Indicator) => (en && indicators[k].unit === "Pers." ? "ppl" : indicators[k].unit);
+  const unit = (k: Indicator) => (en && indicators[k].unit === "Pers." ? "ppl" : en && indicators[k].unit === "Obj." ? "units" : indicators[k].unit);
   const combo = conditions.length > 1;
   const single = conditions.length === 1 ? conditions[0]!.ind : null;
   const analysis = analyses.find((a) => a.id === analysisId);
