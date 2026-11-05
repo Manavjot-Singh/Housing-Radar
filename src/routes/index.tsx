@@ -9,6 +9,7 @@ import { recommend, type Profile } from "@/lib/recommendations";
 import {
   analyses, thresholdText, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
   type Condition, type Dir, type Indicator,
+  setAmenitySelection,
 } from "@/lib/radar";
 
 export const Route = createFileRoute("/")({
