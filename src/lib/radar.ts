@@ -108,9 +108,9 @@ export const indicators: Record<
     hint: "Räume aller Wohnungen geteilt durch die Einwohner (7 und mehr Räume als 7 gezählt).",
   },
   versorgung: {
-    label: "Versorgung", labelEn: "Amenities", hintEn: "How many of three amenities are within walking distance: supermarket (600 m), doctor (600 m), bus/rail stop (400 m).",
-    unit: "/ 3", breaks: [0.5, 1.5, 2.5, 99], decimals: 1, gridSource: true, gridIndex: 8, legend: ["0", "1", "2", "3", ""],
-    hint: "Wie viele von drei Angeboten zu Fuß erreichbar sind: Supermarkt (600 m), Arztpraxis (600 m), Bus-/Bahnhalt (400 m).",
+    label: "Versorgung", labelEn: "Amenities", hintEn: "How many of four amenities are within walking distance: supermarket (600 m), bakery (600 m), doctor (600 m), bus/rail stop (400 m).",
+    unit: "/ 4", breaks: [0.5, 1.5, 2.5, 3.5], decimals: 1, gridSource: true, gridIndex: 8, legend: ["0", "1", "2", "3", "4"],
+    hint: "Wie viele von vier Angeboten zu Fuß erreichbar sind: Supermarkt (600 m), Bäckerei (600 m), Arztpraxis (600 m), Bus-/Bahnhalt (400 m).",
   },
   gewerbeLeerstand: {
     label: "Gewerbeleerstand", labelEn: "Commercial vacancy", hintEn: "Vacant or soon-to-be-vacant shops and commercial units within 250 m (LeAn extract, Altstadt shopping streets only – no data elsewhere).",
@@ -148,7 +148,7 @@ export function value(d: District, ind: Indicator): number | null {
   return d[ind];
 }
 
-/** Grid cell: [lon, lat, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling building %, rooms/person, amenities 0–3, district]. */
+/** Grid cell: [lon, lat, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling building %, rooms/person, amenities 0–4, district]. */
 export type Cell = [number, number, number | null, number | null, number | null, number | null, number | null, number | null, number, string];
 
 /** The cell's own value, or null when the census publishes none (or the indicator only exists per district). */
@@ -221,13 +221,13 @@ export function meets(v: number | null, cond: Condition): boolean | null {
   return cond.dir === "high" ? v >= (cond.min ?? b[2]!) : v < b[1]!;
 }
 
-/** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 3" for low. */
+/** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 4" for low. */
 export function thresholdText(cond: Condition, en = false): string {
   const i = indicators[cond.ind];
   const u = en && i.unit === "Pers." ? "ppl" : i.unit;
   const x = cond.dir === "high" ? (cond.min ?? i.breaks[2]!) : i.breaks[1]!;
   if (cond.ind === "gewerbeLeerstand") return cond.dir === "high" ? (en ? "≥ 1 unit within 250 m" : "≥ 1 Objekt im Umkreis von 250 m") : (en ? "none nearby" : "keins in der Nähe");
-  if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "all 3 nearby" : "alle 3 in der Nähe") : (en ? "0–1 of 3 nearby" : "0–1 von 3 in der Nähe");
+  if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "3–4 of 4 nearby" : "3–4 von 4 in der Nähe") : (en ? "0–1 of 4 nearby" : "0–1 von 4 in der Nähe");
   return `${cond.dir === "high" ? "≥" : "<"} ${fmtNum(x)}${u ? " " + u : ""}`;
 }
 
@@ -241,8 +241,8 @@ export const analyses: Analysis[] = [
   {
     id: "leerstand-versorgung",
     conditions: [{ ind: "leerstandsquote", dir: "high" }, { ind: "versorgung", dir: "low" }],
-    de: { title: "Leerstand bei schlechter Versorgung", question: "Wo stehen Wohnungen leer, obwohl Supermarkt, Arzt oder Haltestelle fehlen?", action: "Stadtentwicklung: Versorgung und Anbindung verbessern, damit leere Wohnungen wieder gefragt sind." },
-    en: { title: "Vacancy with poor amenities", question: "Where are dwellings empty while supermarket, doctor or stop are missing?", action: "Urban development: improve amenities and transport so empty homes become attractive again." },
+    de: { title: "Leerstand bei schlechter Versorgung", question: "Wo stehen Wohnungen leer, obwohl Supermarkt, Bäckerei, Arzt oder Haltestelle fehlen?", action: "Stadtentwicklung: Versorgung und Anbindung verbessern, damit leere Wohnungen wieder gefragt sind." },
+    en: { title: "Vacancy with poor amenities", question: "Where are dwellings empty while supermarket, bakery, doctor or stop are missing?", action: "Urban development: improve amenities and transport so empty homes become attractive again." },
   },
   {
     id: "wohnungstausch",
@@ -312,6 +312,6 @@ export const sources: Source[] = [
   { en: { name: "Census 2022 – Buildings by number of dwellings", content: "Residential buildings with 1, 2, 3–6, 7–12, 13+ dwellings", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Gebäude nach Anzahl der Wohnungen", publisher: "Statistisches Bundesamt", content: "Wohngebäude mit 1, 2, 3–6, 7–12, 13+ Wohnungen", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { en: { name: "Census 2022 – Dwellings by number of rooms", content: "Dwellings with 1 to 7+ rooms", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Wohnungen nach Zahl der Räume", publisher: "Statistisches Bundesamt", content: "Wohnungen mit 1 bis 7+ Räumen", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { en: { name: "LeAn extract – commercial vacancy", content: "55 commercial units in Altstadt shopping streets with status (4 vacant, 4 at risk); owner data removed", level: "Street (house numbers anonymised)", status: "Extract provided by the city for the hackathon" }, name: "LeAn-Auszug – Gewerbeleerstand", publisher: "Hansestadt Lüneburg, Leerstandsmanagement (LeAn)", content: "55 Gewerbeobjekte in Altstadt-Einkaufsstraßen mit Status (4 leer, 4 drohend leer); Eigentümerdaten entfernt", licence: "Bereitgestellt für den Hackathon (Ausnahme laut Challenge)", level: "Straße (Hausnummern anonymisiert)", status: "Auszug der Stadt für den Hackathon", url: "https://www.hansestadt-lueneburg.de" },
-  { en: { name: "OpenStreetMap amenities", content: "62 supermarkets, 80 doctors' practices, 513 bus/rail stops", level: "Points", status: "Retrieved 5 Nov 2026" }, name: "Versorgung aus OpenStreetMap", publisher: "OpenStreetMap-Mitwirkende", content: "62 Supermärkte, 80 Arztpraxen, 513 Bus-/Bahnhalte", level: "Punkte", licence: "ODbL 1.0", status: "Abruf 05.11.2026", url: "https://www.openstreetmap.org" },
+  { en: { name: "OpenStreetMap amenities", content: "62 supermarkets, 55 bakeries, 80 doctors' practices, 513 bus/rail stops", level: "Points", status: "Retrieved 5 Nov 2026" }, name: "Versorgung aus OpenStreetMap", publisher: "OpenStreetMap-Mitwirkende", content: "62 Supermärkte, 55 Bäckereien, 80 Arztpraxen, 513 Bus-/Bahnhalte", level: "Punkte", licence: "ODbL 1.0", status: "Abruf 05.11.2026", url: "https://www.openstreetmap.org" },
   { en: { name: "Nature reserves (NSG)", content: "Five protected polygons; removed from the future-development review zones", level: "City-clipped polygons", status: "NLWKN WFS extract 5 Nov 2026" }, name: "Naturschutzgebiete Niedersachsen", publisher: "NLWKN · Niedersächsisches Umweltkarten-Geoportal", content: "Fünf Schutzgebietsflächen; von den zukünftigen Entwicklungs-Prüfzonen abgezogen", level: "Auf Stadtteilumgrenzung zugeschnittene Polygone", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "NLWKN-WFS-Auszug 05.11.2026", url: "https://umweltportal.niedersachsen.de/suche/detail?id=numis-metadaten-7d3a9e20-4519-456e-8a75-b6d18250c5a8" },
 ];

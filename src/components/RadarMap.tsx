@@ -9,7 +9,7 @@ import {
   type Cell, type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
-export type AmenityKey = "shop" | "doc" | "pt";
+export type AmenityKey = "shop" | "doc" | "pt" | "bakery";
 
 type Props = {
   lang: "de" | "en";
@@ -35,6 +35,7 @@ export const AMENITY_COLOR: Record<AmenityKey, () => string> = {
   shop: () => cssVar("--scale-3"),
   doc: () => cssVar("--poi-doc"),
   pt: () => cssVar("--card"),
+  bakery: () => cssVar("--poi-bakery"),
 };
 
 export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSelect }: Props) {
@@ -161,8 +162,8 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
     if (detail) dl.bringToBack();
     layers.current.push(dl);
 
-    const icon: Record<AmenityKey, string> = { shop: "S", doc: "A", pt: "H" };
-    const iconEn: Record<AmenityKey, string> = { shop: "S", doc: "D", pt: "T" };
+    const icon: Record<AmenityKey, string> = { shop: "S", doc: "A", pt: "H", bakery: "B" };
+    const iconEn: Record<AmenityKey, string> = { shop: "S", doc: "D", pt: "T", bakery: "B" };
     const pg = Lf.layerGroup();
     (Object.keys(amenities) as AmenityKey[]).forEach((k) => {
       if (!amenities[k]) return;
