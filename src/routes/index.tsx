@@ -244,7 +244,7 @@ function Index() {
                   <div><dt className="text-muted-foreground">{tx.old}<MetricInfo k="old" lang={lang} label={tx.old} /></dt><dd className="font-display text-2xl font-semibold">{sel.anteil65 != null ? `${fmtAuto(sel.anteil65)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.efh}<MetricInfo k="efh" lang={lang} label={tx.efh} /></dt><dd className="font-display text-2xl font-semibold">{sel.efhAnteil != null ? `${Math.round(sel.efhAnteil)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.rooms}<MetricInfo k="rooms" lang={lang} label={tx.rooms} /></dt><dd className="font-display text-2xl font-semibold">{sel.raeumeProKopf != null ? fmt1(sel.raeumeProKopf) : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${fmt1(sel.versorgung)} / 3` : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${fmt1(sel.versorgung)} / 4` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.density}<MetricInfo k="density" lang={lang} label={tx.density} /></dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>
                   <div><dt className="text-muted-foreground">{tx.coverage}<MetricInfo k="coverage" lang={lang} label={tx.coverage} /></dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>

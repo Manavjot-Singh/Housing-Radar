@@ -221,7 +221,7 @@ export function meets(v: number | null, cond: Condition): boolean | null {
   return cond.dir === "high" ? v >= (cond.min ?? b[2]!) : v < b[1]!;
 }
 
-/** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 3" for low. */
+/** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 4" for low. */
 export function thresholdText(cond: Condition, en = false): string {
   const i = indicators[cond.ind];
   const u = en && i.unit === "Pers." ? "ppl" : i.unit;
