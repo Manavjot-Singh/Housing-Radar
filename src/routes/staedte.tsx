@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CityMap } from "@/components/CityMap";
 import { useLang } from "@/lib/i18n";
+import { recommend, GERMANY } from "@/lib/recommendations";
 import { districtName, fetchDistricts, loadCensus, searchCities, type CensusRow, type CityHit, type DistrictSet } from "@/lib/citySearch";
 
 export const Route = createFileRoute("/staedte")({
@@ -135,6 +136,17 @@ function Staedte() {
                   <p className="mt-2 text-sm text-muted-foreground">{en ? "No census figures matched this place (no municipality key in OpenStreetMap)." : "Keine Zensuszahlen zugeordnet (kein Gemeindeschlüssel in OpenStreetMap)."}</p>
                 )}
               </section>
+              {census && (
+                <section className="rounded-md border bg-card p-4">
+                  <p className="kicker">{en ? "What the city can do" : "Was die Stadt tun kann"} · {city.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{en ? "Matched to this municipality's census figures compared with Germany." : "Passend zu den Zensuszahlen dieser Gemeinde im Vergleich zu Deutschland."}</p>
+                  <ul className="mt-2 space-y-2">
+                    {recommend({ wohnflaecheProKopf: census.wohnflaecheProKopf, leerstandsquote: census.leerstandsquote, anteilAelter: census.anteil67, efhAnteil: census.efhAnteil }, GERMANY).map((i) => (
+                      <li key={i.id} className="border-l-2 border-primary pl-3 text-sm"><strong>{i[lang].title}:</strong> {i[lang].text}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker mb-2">{en ? "Districts" : "Stadtteile"} {active ? `· ${names.length}` : ""}</p>
                 {sets.length > 1 && (
