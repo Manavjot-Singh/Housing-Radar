@@ -96,7 +96,7 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
 
   const hasFocus = focus instanceof Set && focus.size > 0;
 
-  const legend: { swatch: React.CSSProperties; de: string; en: string; onlyWithFocus?: boolean }[] = [
+  const legend: { swatch: CSSProperties; de: string; en: string; onlyWithFocus?: boolean }[] = [
     {
       swatch: { background: "rgba(22,163,74,.75)", border: "2px solid #b91c1c" },
       de: "Erfüllt alle Bedingungen · empfohlener Randbereich",
