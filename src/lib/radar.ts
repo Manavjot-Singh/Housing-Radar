@@ -177,18 +177,6 @@ export const analyses: Analysis[] = [
     de: { title: "Viel Fläche, ältere Bewohner", question: "Wo leben viele Ältere auf viel Wohnfläche?", action: "Wohnungstausch und altersgerechte Wohnungen in der Nähe anbieten – frei werdende Häuser für Familien." },
     en: { title: "Large homes, older residents", question: "Where do many older people live on a lot of space?", action: "Offer home swaps and age-friendly flats nearby – freeing up houses for families." },
   },
-  {
-    id: "nachverdichtung",
-    conditions: [{ ind: "efhAnteil", dir: "high" }, { ind: "versorgung", dir: "high" }],
-    de: { title: "Nachverdichtung an guter Infrastruktur", question: "Wo stehen überwiegend Einfamilienhäuser, aber Versorgung und Anbindung sind gut?", action: "Aufstockung, Anbau und Einliegerwohnungen fördern – mehr Wohnungen ohne neue Flächen." },
-    en: { title: "Densify near good infrastructure", question: "Where are mostly detached houses, yet amenities and transport are good?", action: "Support extra storeys, extensions and granny flats – more homes without using new land." },
-  },
-  {
-    id: "knapp",
-    conditions: [{ ind: "wohnflaecheProKopf", dir: "low" }, { ind: "raeumeProKopf", dir: "low" }],
-    de: { title: "Wohnraum knapp", question: "Wo teilen sich Menschen wenig Fläche und wenige Räume?", action: "Vorrang für Neubau und geförderten Wohnraum in der Umgebung." },
-    en: { title: "Crowded housing", question: "Where do people share little space and few rooms?", action: "Prioritise new and subsidised housing nearby." },
-  },
 ];
 
 function num(x: number, decimals: number) {
