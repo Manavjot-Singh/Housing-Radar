@@ -16,9 +16,15 @@ export type District = {
   bebautAnteil: number;
   wohnGrundflaecheM2: number;
   einwohnerJeGebaeude: number;
+  anteil65: number | null;
+  abdeckung65: number;
+  raeumeProKopf: number | null;
+  abdeckungRaeume: number;
+  efhAnteil: number | null;
+  versorgung: number | null;
 };
 
-export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "bebautAnteil" | "einwohnerJeGebaeude";
+export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "anteil65" | "efhAnteil" | "raeumeProKopf" | "versorgung" | "bebautAnteil" | "einwohnerJeGebaeude";
 
 type DistrictProps = Omit<District, "einwohnerJeGebaeude">;
 
@@ -41,14 +47,14 @@ export const cityPopulation = summary.einwohner;
 
 export const indicators: Record<
   Indicator,
-  { label: string; labelEn: string; hintEn: string; unit: string; breaks: number[]; decimals: number; gridSource: boolean; hint: string }
+  { label: string; labelEn: string; hintEn: string; unit: string; breaks: number[]; decimals: number; gridSource: boolean; hint: string; gridIndex?: number; legend?: string[] }
 > = {
   wohnflaecheProKopf: {
     label: "Wohnfläche pro Einwohner", labelEn: "Living space per resident", hintEn: "Living space per person – weighted by residents.",
     unit: "m²",
-    breaks: [48, 52, 56, 61],
+    breaks: [47, 53, 59, 68],
     decimals: 1,
-    gridSource: true,
+    gridSource: true, gridIndex: 3,
     hint: "Wie viel Wohnfläche auf eine Person entfällt – nach Einwohnern gewichtet.",
   },
   leerstandsquote: {
@@ -56,8 +62,28 @@ export const indicators: Record<
     unit: "%",
     breaks: [8, 10, 14, 20],
     decimals: 1,
-    gridSource: true,
+    gridSource: true, gridIndex: 4,
     hint: "Anteil leerstehender Wohnungen, gezählt vom Zensus – nur Wohnraum, kein Gewerbe.",
+  },
+  anteil65: {
+    label: "Anteil ab 65 Jahren", labelEn: "Share aged 65+", hintEn: "Where older people live: share of residents aged 65 or over.",
+    unit: "%", breaks: [13, 19, 27, 37], decimals: 1, gridSource: true, gridIndex: 5,
+    hint: "Wo ältere Menschen wohnen: Anteil der Einwohner ab 65 Jahren.",
+  },
+  efhAnteil: {
+    label: "Ein-/Zweifamilienhäuser", labelEn: "Detached / two-family houses", hintEn: "Share of residential buildings with 1–2 dwellings. Low values mean blocks of flats.",
+    unit: "%", breaks: [45, 70, 85, 95], decimals: 0, gridSource: true, gridIndex: 6,
+    hint: "Anteil der Wohngebäude mit 1–2 Wohnungen. Niedrige Werte bedeuten Mehrfamilienhäuser.",
+  },
+  raeumeProKopf: {
+    label: "Räume pro Person", labelEn: "Rooms per person", hintEn: "Rooms in all dwellings divided by residents (7+ rooms counted as 7).",
+    unit: "", breaks: [1.6, 2, 2.35, 2.8], decimals: 1, gridSource: true, gridIndex: 7,
+    hint: "Räume aller Wohnungen geteilt durch die Einwohner (7 und mehr Räume als 7 gezählt).",
+  },
+  versorgung: {
+    label: "Versorgung", labelEn: "Amenities", hintEn: "How many of three amenities are within walking distance: supermarket (600 m), doctor (600 m), bus/rail stop (400 m).",
+    unit: "/ 3", breaks: [0.5, 1.5, 2.5, 99], decimals: 1, gridSource: true, gridIndex: 8, legend: ["0", "1", "2", "3", ""],
+    hint: "Wie viele von drei Angeboten zu Fuß erreichbar sind: Supermarkt (600 m), Arztpraxis (600 m), Bus-/Bahnhalt (400 m).",
   },
   bebautAnteil: {
     label: "Bebauungsdichte", labelEn: "Building density", hintEn: "Share of district area covered by building footprints.",
@@ -89,6 +115,72 @@ export function scaleClass(value: number | null, ind: Indicator): number {
 export function value(d: District, ind: Indicator): number | null {
   return d[ind];
 }
+
+/** Grid cell: [lon, lat, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling building %, rooms/person, amenities 0–3, district]. */
+export type Cell = [number, number, number | null, number | null, number | null, number | null, number | null, number | null, number, string];
+
+/** The cell's own value, or null when the census publishes none (or the indicator only exists per district). */
+export function cellOwn(c: Cell, ind: Indicator): number | null {
+  const i = indicators[ind].gridIndex;
+  return i == null ? null : (c[i] as number | null);
+}
+
+/** The cell's value with the district value as fallback, used for combined analyses. */
+export function cellValue(c: Cell, ind: Indicator): number | null {
+  const own = cellOwn(c, ind);
+  if (own != null) return own;
+  const d = districtByName.get(c[9]);
+  return d ? value(d, ind) : null;
+}
+
+export type Dir = "high" | "low";
+export type Condition = { ind: Indicator; dir: Dir };
+
+/** High = top two colour classes, low = bottom two. */
+export function meets(v: number | null, cond: Condition): boolean | null {
+  if (v == null) return null;
+  const b = indicators[cond.ind].breaks;
+  return cond.dir === "high" ? v >= b[2]! : v < b[1]!;
+}
+
+export type Analysis = {
+  id: string; conditions: Condition[];
+  de: { title: string; question: string; action: string };
+  en: { title: string; question: string; action: string };
+};
+
+export const analyses: Analysis[] = [
+  {
+    id: "leerstand-versorgung",
+    conditions: [{ ind: "leerstandsquote", dir: "high" }, { ind: "versorgung", dir: "low" }],
+    de: { title: "Leerstand bei schlechter Versorgung", question: "Wo stehen Wohnungen leer, obwohl Supermarkt, Arzt oder Haltestelle fehlen?", action: "Stadtentwicklung: Versorgung und Anbindung verbessern, damit leere Wohnungen wieder gefragt sind." },
+    en: { title: "Vacancy with poor amenities", question: "Where are dwellings empty while supermarket, doctor or stop are missing?", action: "Urban development: improve amenities and transport so empty homes become attractive again." },
+  },
+  {
+    id: "leerstand-aktivieren",
+    conditions: [{ ind: "leerstandsquote", dir: "high" }, { ind: "versorgung", dir: "high" }],
+    de: { title: "Leerstand an guter Lage", question: "Wo stehen Wohnungen leer, obwohl alles zu Fuß erreichbar ist?", action: "Schnell wirksam: Eigentümer ansprechen, Leerstand aktivieren (Sanierungsberatung, Vermittlung)." },
+    en: { title: "Vacancy in well-served areas", question: "Where are dwellings empty although everything is within walking distance?", action: "Quick win: contact owners and bring vacant homes back to the market (renovation advice, letting support)." },
+  },
+  {
+    id: "wohnungstausch",
+    conditions: [{ ind: "wohnflaecheProKopf", dir: "high" }, { ind: "anteil65", dir: "high" }],
+    de: { title: "Viel Fläche, ältere Bewohner", question: "Wo leben viele Ältere auf viel Wohnfläche?", action: "Wohnungstausch und altersgerechte Wohnungen in der Nähe anbieten – frei werdende Häuser für Familien." },
+    en: { title: "Large homes, older residents", question: "Where do many older people live on a lot of space?", action: "Offer home swaps and age-friendly flats nearby – freeing up houses for families." },
+  },
+  {
+    id: "nachverdichtung",
+    conditions: [{ ind: "efhAnteil", dir: "high" }, { ind: "versorgung", dir: "high" }],
+    de: { title: "Nachverdichtung an guter Infrastruktur", question: "Wo stehen überwiegend Einfamilienhäuser, aber Versorgung und Anbindung sind gut?", action: "Aufstockung, Anbau und Einliegerwohnungen fördern – mehr Wohnungen ohne neue Flächen." },
+    en: { title: "Densify near good infrastructure", question: "Where are mostly detached houses, yet amenities and transport are good?", action: "Support extra storeys, extensions and granny flats – more homes without using new land." },
+  },
+  {
+    id: "knapp",
+    conditions: [{ ind: "wohnflaecheProKopf", dir: "low" }, { ind: "raeumeProKopf", dir: "low" }],
+    de: { title: "Wohnraum knapp", question: "Wo teilen sich Menschen wenig Fläche und wenige Räume?", action: "Vorrang für Neubau und geförderten Wohnraum in der Umgebung." },
+    en: { title: "Crowded housing", question: "Where do people share little space and few rooms?", action: "Prioritise new and subsidised housing nearby." },
+  },
+];
 
 function num(x: number, decimals: number) {
   return x.toLocaleString(loc, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
