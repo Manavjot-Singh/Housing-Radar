@@ -4,8 +4,10 @@ import { RadarMap, type AmenityKey } from "@/components/RadarMap";
 import { SiteHeader } from "@/components/SiteHeader";
 import { FutureDevelopmentPlans } from "@/components/FutureDevelopmentPlans";
 import { useLang, t } from "@/lib/i18n";
+import { MetricInfo, type MetricKey } from "@/components/MetricInfo";
+import { recommend, type Profile } from "@/lib/recommendations";
 import {
-  analyses, thresholdText, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
+  analyses, thresholdText, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
   type Condition, type Dir, type Indicator,
 } from "@/lib/radar";
 
@@ -26,6 +28,22 @@ export const Route = createFileRoute("/")({
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
 const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)" };
 const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "gewerbeLeerstand", "bebautAnteil", "einwohnerJeGebaeude"];
+function weighted(k: keyof Profile & keyof (typeof districts)[number]) {
+  let s = 0, w = 0;
+  for (const d of districts) { const v = d[k] as number | null; if (v != null) { s += v * d.einwohner; w += d.einwohner; } }
+  return w ? s / w : null;
+}
+const toProfile = (d: (typeof districts)[number]): Profile => ({
+  wohnflaecheProKopf: d.wohnflaecheProKopf, leerstandsquote: d.leerstandsquote, anteilAelter: d.anteil65, efhAnteil: d.efhAnteil,
+  raeumeProKopf: d.raeumeProKopf, versorgung: d.versorgung, gewerbeLeerstand: d.gewerbeLeerstand, einwohnerJeGebaeude: d.einwohnerJeGebaeude,
+});
+const cityRef: Profile = {
+  wohnflaecheProKopf: weighted("wohnflaecheProKopf"), leerstandsquote: weighted("leerstandsquote"), efhAnteil: weighted("efhAnteil"),
+  raeumeProKopf: weighted("raeumeProKopf"), versorgung: weighted("versorgung"), anteilAelter: (() => {
+    let s = 0, w = 0; for (const d of districts) if (d.anteil65 != null) { s += d.anteil65 * d.einwohner; w += d.einwohner; } return w ? s / w : null;
+  })(),
+};
+
 const defaultDir: Record<Indicator, Dir> = {
   wohnflaecheProKopf: "high", leerstandsquote: "high", anteil65: "high", efhAnteil: "high",
   raeumeProKopf: "high", versorgung: "low", gewerbeLeerstand: "high", bebautAnteil: "low", einwohnerJeGebaeude: "low",
@@ -82,9 +100,7 @@ function Index() {
       <SiteHeader />
       <main className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-5 max-w-3xl">
-          <p className="kicker">Leuphana AI Hackathon · Challenge 4</p>
-          <h1 className="mt-1 text-4xl font-bold uppercase leading-none sm:text-5xl">{tx.title}</h1>
-          <p className="mt-3 text-muted-foreground">{tx.intro(fmtAuto(cityAvg), fmtInt(cityPopulation))}</p>
+          <h1 className="text-4xl font-bold uppercase leading-none sm:text-5xl">{tx.title}</h1>
         </div>
 
         <section className="mb-3">
@@ -218,33 +234,26 @@ function Index() {
           </div>
 
           <aside className="flex flex-col gap-4">
-            {analysis && (
-              <section className="rounded-md border bg-card p-4">
-                <p className="kicker">{tx.whatToDo}</p>
-                <p className="mt-1 border-l-2 border-primary pl-3 text-sm">{analysis[lang].action}</p>
-              </section>
-            )}
-
             {sel && (
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker">{tx.district}</p>
                 <h2 className="text-3xl font-bold uppercase">{sel.name}</h2>
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div><dt className="text-muted-foreground">{tx.living}</dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.wohnflaecheProKopf)} m²</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.vacancy}</dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${fmtAuto(sel.leerstandsquote)} %` : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.old}</dt><dd className="font-display text-2xl font-semibold">{sel.anteil65 != null ? `${fmtAuto(sel.anteil65)} %` : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.efh}</dt><dd className="font-display text-2xl font-semibold">{sel.efhAnteil != null ? `${Math.round(sel.efhAnteil)} %` : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.rooms}</dt><dd className="font-display text-2xl font-semibold">{sel.raeumeProKopf != null ? fmt1(sel.raeumeProKopf) : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.amen}</dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${fmt1(sel.versorgung)} / 3` : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.density}</dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.coverage}</dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.living}<MetricInfo k="living" lang={lang} label={tx.living} /></dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.wohnflaecheProKopf)} m²</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.vacancy}<MetricInfo k="vacancy" lang={lang} label={tx.vacancy} /></dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${fmtAuto(sel.leerstandsquote)} %` : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.old}<MetricInfo k="old" lang={lang} label={tx.old} /></dt><dd className="font-display text-2xl font-semibold">{sel.anteil65 != null ? `${fmtAuto(sel.anteil65)} %` : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.efh}<MetricInfo k="efh" lang={lang} label={tx.efh} /></dt><dd className="font-display text-2xl font-semibold">{sel.efhAnteil != null ? `${Math.round(sel.efhAnteil)} %` : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.rooms}<MetricInfo k="rooms" lang={lang} label={tx.rooms} /></dt><dd className="font-display text-2xl font-semibold">{sel.raeumeProKopf != null ? fmt1(sel.raeumeProKopf) : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${fmt1(sel.versorgung)} / 3` : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.density}<MetricInfo k="density" lang={lang} label={tx.density} /></dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.coverage}<MetricInfo k="coverage" lang={lang} label={tx.coverage} /></dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>
 
                 <div className="mt-3 rounded-sm border bg-muted/50 p-3">
                   <div className="grid grid-cols-3 gap-2 text-center">
-                    <div><dt className="text-xs text-muted-foreground">{tx.residents}</dt><dd className="font-display text-xl font-semibold">{sel.einwohner.toLocaleString(loc)}</dd></div>
-                    <div><dt className="text-xs text-muted-foreground">{tx.buildings}</dt><dd className="font-display text-xl font-semibold">{sel.gebaeude.toLocaleString(loc)}</dd></div>
-                    <div><dt className="text-xs text-muted-foreground">{tx.perBuilding}</dt><dd className="font-display text-xl font-semibold text-primary">{fmt1(sel.einwohnerJeGebaeude)}</dd></div>
+                    <div><dt className="text-xs text-muted-foreground">{tx.residents}<MetricInfo k="residents" lang={lang} label={tx.residents} /></dt><dd className="font-display text-xl font-semibold">{sel.einwohner.toLocaleString(loc)}</dd></div>
+                    <div><dt className="text-xs text-muted-foreground">{tx.buildings}<MetricInfo k="buildings" lang={lang} label={tx.buildings} /></dt><dd className="font-display text-xl font-semibold">{sel.gebaeude.toLocaleString(loc)}</dd></div>
+                    <div><dt className="text-xs text-muted-foreground">{tx.perBuilding}<MetricInfo k="perBuilding" lang={lang} label={tx.perBuilding} /></dt><dd className="font-display text-xl font-semibold text-primary">{fmt1(sel.einwohnerJeGebaeude)}</dd></div>
                   </div>
                   <p className="mt-2 border-t pt-2 text-xs text-muted-foreground">
                     {tx.spread(fmtInt(sel.einwohner), fmtInt(sel.gebaeude), fmt1(sel.einwohnerJeGebaeude))}
@@ -252,6 +261,21 @@ function Index() {
                 </div>
 
                 <p className="mt-3 border-l-2 border-primary pl-3 text-sm">{verdict(sel, lang)}</p>
+              </section>
+            )}
+
+            {(sel || analysis) && (
+              <section className="rounded-md border bg-card p-4">
+                <p className="kicker">{tx.whatToDo}{sel ? ` · ${sel.name}` : ""}</p>
+                {sel && <p className="mt-1 text-xs text-muted-foreground">{tx.ideasBasis}</p>}
+                <ul className="mt-2 space-y-2">
+                  {analysis && (
+                    <li className="border-l-2 border-primary pl-3 text-sm"><strong>{analysis[lang].title}:</strong> {analysis[lang].action}</li>
+                  )}
+                  {sel && recommend(toProfile(sel), cityRef).map((i) => (
+                    <li key={i.id} className="border-l-2 border-primary pl-3 text-sm"><strong>{i[lang].title}:</strong> {i[lang].text}</li>
+                  ))}
+                </ul>
               </section>
             )}
 

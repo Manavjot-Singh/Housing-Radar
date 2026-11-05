@@ -127,10 +127,11 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
         const head = zoomed || !b
           ? `<b>${tx.cell} · ${c[9]}</b><br>${tx.cellRes}: ${c[2] ?? "–"}`
           : `<b>${tx.block} · ${c[9]}</b><br>${tx.cellRes}: ${b[1]}<br>${tx.blockCells}: ${b[8]}`;
+        const coord = `${tx.coords}: ${c[1].toLocaleString(loc, { minimumFractionDigits: 5 })}° N, ${c[0].toLocaleString(loc, { minimumFractionDigits: 5 })}° E`;
         Lf.rectangle([[c[1] - dLat, c[0] - dLon], [c[1] + dLat, c[0] + dLon]], {
           stroke: false, fillColor: fill, fillOpacity: opacity,
         })
-          .bindTooltip(`${head}<br>${rows.join("<br>")}`, { sticky: true })
+          .bindTooltip(`${head}<br>${rows.join("<br>")}<br><span style="opacity:.7">${coord}</span>`, { sticky: true })
           .on("click", () => onSelectRef.current(c[9]))
           .addTo(grp);
       }
