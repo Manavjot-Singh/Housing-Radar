@@ -35,7 +35,7 @@ const limitsDe = [
   "Die Bebauungsdichte zählt nur die Grundfläche der Gebäude, nicht die Geschosse – sie ist ein erster Anhaltspunkt für Nachverdichtung, kein Ersatz für ein Baulückenkataster. Garagen und Nebengebäude sind enthalten.",
   "Die Zahl „Einwohner je Gebäude“ zählt alle amtlich erfassten Gebäude, also auch Garagen, Schuppen und Betriebsgebäude. Der tatsächliche Besatz je Wohngebäude ist deshalb höher; die Kennzahl ist ein Vergleichswert zwischen Stadtteilen, keine absolute Größe.",
   "In kombinierten Analysen zählt für Quadrate ohne eigenen Wert der Stadtteilwert. Das betrifft vor allem den Leerstand: nur rund 11 % der Quadrate haben einen eigenen Wert.",
-  "Die Versorgung misst Luftlinie, keine Fußwege, (Angebote knapp außerhalb der Stadt zählen mit). Die Vollständigkeit von OpenStreetMap ist nicht garantiert.",
+  "Die Versorgung misst Luftlinie, keine Fußwege (Angebote knapp außerhalb der Stadt zählen mit). Die Vollständigkeit von OpenStreetMap ist nicht garantiert.",
   "Räume pro Person enthält auch Küchen ab 6 m² (Zensus-Definition) und bezieht sich auf alle Einwohner, auch in Wohnheimen.",
   "Einwohner- und Gebäudezahlen stammen aus verschiedenen Erhebungen mit unterschiedlichen Stichtagen (Zensus Mai 2022, ALKIS September 2026).",
 ];
