@@ -33,7 +33,7 @@ function color(c: number) {
 /** Dot colours for amenity markers, shared with the legend. */
 export const AMENITY_COLOR: Record<AmenityKey, () => string> = {
   shop: () => cssVar("--scale-3"),
-  doc: () => cssVar("--foreground"),
+  doc: () => cssVar("--poi-doc"),
   pt: () => cssVar("--card"),
 };
 
