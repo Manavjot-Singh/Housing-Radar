@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { RadarMap, type AmenityKey } from "@/components/RadarMap";
 import { SiteHeader } from "@/components/SiteHeader";
+import { FutureDevelopmentPlans } from "@/components/FutureDevelopmentPlans";
 import { useLang, t } from "@/lib/i18n";
 import {
   analyses, thresholdText, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
@@ -257,6 +258,7 @@ function Index() {
             {single && (
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker mb-2">{tx.ranking} · {L(single)}</p>
+                <p className="mb-2 text-xs text-muted-foreground">{en ? "Under each bar: R = residents · B = buildings · P/B = residents per building." : "Unter den Balken: E = Einwohner · G = Gebäude · E/G = Einwohner je Gebäude."}</p>
                 <ul className="space-y-1">
                   {sorted.map((d) => {
                     const v = value(d, single);
@@ -277,6 +279,7 @@ function Index() {
             )}
           </aside>
         </div>
+        <FutureDevelopmentPlans />
       </main>
     </div>
   );
