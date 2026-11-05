@@ -94,8 +94,8 @@ export function centroid(r: Ring): [number, number] {
 }
 
 /** Parse ALKIS-vereinfacht GML (srsName EPSG:4326, lat lon order) into building rings + municipality key. */
-export function parseAlkisGml(xml: string): { ring: Ring; ags: string }[] {
-  const out: { ring: Ring; ags: string }[] = [];
+export function parseAlkisGml(xml: string): { ring: Ring; ags: string; fn: string }[] {
+  const out: { ring: Ring; ags: string; fn: string }[] = [];
   const members = xml.split("<wfs:member>");
   for (let i = 1; i < members.length; i++) {
     const m = members[i]!;
@@ -105,7 +105,8 @@ export function parseAlkisGml(xml: string): { ring: Ring; ags: string }[] {
     const ring: Ring = [];
     for (let k = 0; k + 1 < nums.length; k += 2) ring.push([nums[k + 1]!, nums[k]!]);
     const ags = /<gmdschl>([^<]+)<\/gmdschl>/.exec(m)?.[1] ?? "";
-    out.push({ ring, ags });
+    const fn = /<funktion>([^<]+)<\/funktion>/.exec(m)?.[1] ?? "";
+    out.push({ ring, ags, fn });
   }
   return out;
 }
