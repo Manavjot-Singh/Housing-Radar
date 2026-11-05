@@ -27,6 +27,7 @@ const limits = [
   "Stichtag ist Mai 2022; Neubaugebiete seitdem fehlen.",
   "Der Zensus verändert kleine Fallzahlen leicht (Cell-Key-Methode) und lässt manche Zellen aus Geheimhaltungsgründen leer. Die Spalte „Datenabdeckung“ zeigt, für welchen Anteil der Einwohner ein Wohnflächenwert vorlag.",
   "Für Wilschenbruch liegt keine Leerstandsquote vor.",
+  "Die Leerstandsquote zählt ausschließlich Wohnungen. Leerstehende Läden, Büros oder andere Gewerbeflächen sind nicht enthalten – dafür gäbe es keine offene 100-m-Quelle.",
   "Die Leerstandsquote ist nach Einwohnern statt nach Wohnungen gewichtet, weil keine Wohnungszahl je Zelle geladen wurde. Das ist eine Näherung.",
   "Zellen an Stadtteilgrenzen werden vollständig dem Stadtteil ihres Mittelpunkts zugerechnet.",
   "Die Stadtteilgrenzen aus OpenStreetMap sind keine amtlichen Grenzen; sie sollten mit Lüne-GIS abgeglichen werden.",
