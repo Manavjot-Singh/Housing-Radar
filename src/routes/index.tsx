@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { RadarMap } from "@/components/RadarMap";
 import { SiteHeader } from "@/components/SiteHeader";
-import { cityAvg, cityPopulation, districts, fmtNum, formatValue, indicators, scaleClass, value, verdict, type Indicator } from "@/lib/radar";
+import { cityAvg, cityPopulation, districts, fmt1, fmtNum, formatValue, indicators, scaleClass, value, verdict, type Indicator } from "@/lib/radar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,7 +37,7 @@ function Index() {
           <p className="kicker">Leuphana AI Hackathon · Challenge 4</p>
           <h1 className="mt-1 text-4xl font-bold uppercase leading-none sm:text-5xl">Wo wird Wohnraum in Lüneburg ungleich genutzt?</h1>
           <p className="mt-3 text-muted-foreground">
-            Im Lüneburger Schnitt hat jeder Einwohner <strong className="text-foreground">{cityAvg} m²</strong> Wohnfläche
+            Im Lüneburger Schnitt hat jeder Einwohner <strong className="text-foreground">{fmt1(cityAvg)} m²</strong> Wohnfläche
             ({cityPopulation.toLocaleString("de-DE")} Einwohner in 17 Stadtteilen). Vier öffentliche Datensätze, auf
             Stadtteile zusammengeführt, ganz ohne personenbezogene Daten.
           </p>
@@ -81,9 +81,9 @@ function Index() {
                 <p className="kicker">Stadtteil</p>
                 <h2 className="text-3xl font-bold uppercase">{sel.name}</h2>
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div><dt className="text-muted-foreground">Wohnfläche / Kopf</dt><dd className="font-display text-2xl font-semibold">{sel.wohnflaecheProKopf ?? "–"} m²</dd></div>
-                  <div><dt className="text-muted-foreground">Leerstandsquote</dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${sel.leerstandsquote} %` : "keine Angabe"}</dd></div>
-                  <div><dt className="text-muted-foreground">Bebauungsdichte</dt><dd className="font-display text-2xl font-semibold">{sel.bebautAnteil} %</dd></div>
+                  <div><dt className="text-muted-foreground">Wohnfläche / Kopf</dt><dd className="font-display text-2xl font-semibold">{sel.wohnflaecheProKopf != null ? `${fmt1(sel.wohnflaecheProKopf)} m²` : "–"}</dd></div>
+                  <div><dt className="text-muted-foreground">Leerstandsquote</dt><dd className="font-display text-2xl font-semibold">{sel.leerstandsquote != null ? `${fmt1(sel.leerstandsquote)} %` : "keine Angabe"}</dd></div>
+                  <div><dt className="text-muted-foreground">Bebauungsdichte</dt><dd className="font-display text-2xl font-semibold">{fmt1(sel.bebautAnteil)} %</dd></div>
                   <div><dt className="text-muted-foreground">Datenabdeckung</dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>
 
@@ -91,11 +91,11 @@ function Index() {
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div><dt className="text-xs text-muted-foreground">Einwohner</dt><dd className="font-display text-xl font-semibold">{sel.einwohner.toLocaleString("de-DE")}</dd></div>
                     <div><dt className="text-xs text-muted-foreground">Gebäude</dt><dd className="font-display text-xl font-semibold">{sel.gebaeude.toLocaleString("de-DE")}</dd></div>
-                    <div><dt className="text-xs text-muted-foreground">Personen je Gebäude</dt><dd className="font-display text-xl font-semibold text-primary">{formatValue(sel.einwohnerJeGebaeude, "einwohnerJeGebaeude").replace(" Personen", "")}</dd></div>
+                    <div><dt className="text-xs text-muted-foreground">Personen je Gebäude</dt><dd className="font-display text-xl font-semibold text-primary">{fmt1(sel.einwohnerJeGebaeude)}</dd></div>
                   </div>
                   <p className="mt-2 border-t pt-2 text-xs text-muted-foreground">
                     {sel.einwohner.toLocaleString("de-DE")} Einwohner verteilt auf {sel.gebaeude.toLocaleString("de-DE")} amtlich erfasste Gebäude – das sind{" "}
-                    {formatValue(sel.einwohnerJeGebaeude, "einwohnerJeGebaeude")}.
+                    {fmt1(sel.einwohnerJeGebaeude)} Personen je Gebäude.
                   </p>
                 </div>
 
@@ -110,7 +110,7 @@ function Index() {
                   return (
                     <li key={d.name}>
                       <button onClick={() => setSelected(d.name)} className={`flex w-full items-center gap-2 rounded-sm px-1 py-0.5 text-left text-sm hover:bg-muted ${selected === d.name ? "bg-accent" : ""}`}>
-                        <span className="w-28 shrink-0 truncate">{d.name}</span>
+                        <span className="w-32 shrink-0 truncate">{d.name}</span>
                         <span className="h-2.5 flex-1 overflow-hidden rounded-sm bg-muted">
                           <span className={`block h-full ${swatch[scaleClass(v, indicator)]}`} style={{ width: `${((v ?? 0) / max) * 100}%` }} />
                         </span>
@@ -118,7 +118,7 @@ function Index() {
                       </button>
                       <p className="pb-1 pl-[7.5rem] font-mono text-[11px] text-muted-foreground">
                         {d.einwohner.toLocaleString("de-DE")} E · {d.gebaeude.toLocaleString("de-DE")} G ·{" "}
-                        {formatValue(d.einwohnerJeGebaeude, "einwohnerJeGebaeude").replace(" Personen", "")} P/G
+                        {fmt1(d.einwohnerJeGebaeude)} P/G
                       </p>
                     </li>
                   );
