@@ -30,6 +30,13 @@ function color(c: number) {
   return c === 0 ? cssVar("--nodata") : cssVar(`--scale-${c}`);
 }
 
+/** Dot colours for amenity markers, shared with the legend. */
+export const AMENITY_COLOR: Record<AmenityKey, () => string> = {
+  shop: () => cssVar("--scale-3"),
+  doc: () => cssVar("--poi-doc"),
+  pt: () => cssVar("--card"),
+};
+
 export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSelect }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -91,21 +98,24 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
       for (const c of cells) {
         let fill: string;
         let opacity = 0.85;
+        let marks: (boolean | null)[] = [];
         if (combo) {
           if (!c[2]) continue;
           const res = conditions.map((k) => meets(cellValue(c, k.ind), k));
+          marks = res;
           const hit = res.filter((r) => r === true).length;
           if (hit === conditions.length) fill = color(5);
           else if (hit === conditions.length - 1) { fill = color(2); opacity = 0.6; }
-          else { fill = cssVar("--nodata"); opacity = 0.35; }
+          else continue;
         } else {
           fill = color(scaleClass(cellOwn(c, single!), single!));
         }
-        const rows = (combo ? conditions.map((k) => k.ind) : [single!]).map((k) => {
+        const rows = (combo ? conditions.map((k) => k.ind) : [single!]).map((k, idx) => {
           const own = cellOwn(c, k);
           const v = combo ? cellValue(c, k) : own;
           const u = indicators[k].unit;
-          return `${label(k)}: ${v != null ? f1(v) + (u ? " " + u : "") : tx.noData}${combo && own == null && v != null ? ` <i>(${tx.districtValue})</i>` : ""}`;
+          const m = combo ? (marks[idx] ? "✔ " : marks[idx] === false ? "✘ " : "? ") : "";
+          return `${m}${label(k)}: ${v != null ? f1(v) + (u ? " " + u : "") : tx.noData}${combo && own == null && v != null ? ` <i>(${tx.districtValue})</i>` : ""}`;
         });
         Lf.rectangle([[c[1] - dLat, c[0] - dLon], [c[1] + dLat, c[0] + dLon]], {
           stroke: false, fillColor: fill, fillOpacity: opacity, renderer,
@@ -147,7 +157,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
       if (!amenities[k]) return;
       for (const [lon, lat] of points[k]) {
         Lf.circleMarker([lat, lon], {
-          radius: k === "pt" ? 3 : 5, color: fg, weight: 1, fillColor: k === "doc" ? primary : k === "shop" ? cssVar("--scale-3") : cssVar("--card"), fillOpacity: 1,
+          radius: k === "pt" ? 3 : 5, color: fg, weight: 1, fillColor: AMENITY_COLOR[k](), fillOpacity: 1,
         }).bindTooltip(`${(lang === "en" ? iconEn : icon)[k]} · ${tx.amenity[k]}`).addTo(pg);
       }
     });

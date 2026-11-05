@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useLang, t } from "@/lib/i18n";
 import gitter from "@/data/gitter.json";
 import {
-  analyses, cellValue, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, meets, scaleClass, value, verdict,
+  analyses, thresholdText, cellValue, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, meets, scaleClass, value, verdict,
   type Cell, type Condition, type Dir, type Indicator,
 } from "@/lib/radar";
 
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
+const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)" };
 const cells = gitter as unknown as Cell[];
 const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "bebautAnteil", "einwohnerJeGebaeude"];
 const defaultDir: Record<Indicator, Dir> = {
@@ -124,8 +125,8 @@ function Index() {
                   {c && combo && (
                     <select value={c.dir} onChange={(e) => setDir(k, e.target.value as Dir)} aria-label={L(k)}
                       className="bg-card px-1.5 py-1.5 text-sm outline-none">
-                      <option value="high">{tx.high}</option>
-                      <option value="low">{tx.low}</option>
+                      <option value="high">{tx.high} ({thresholdText({ ind: k, dir: "high" }, en)})</option>
+                      <option value="low">{tx.low} ({thresholdText({ ind: k, dir: "low" }, en)})</option>
                     </select>
                   )}
                 </div>
@@ -149,8 +150,24 @@ function Index() {
           </div>
         </section>
 
-        {analysis ? (
-          <p className="mb-3 max-w-3xl text-sm"><strong>{analysis[lang].question}</strong></p>
+        {combo ? (
+          <section className="mb-3 rounded-md border-l-4 border-primary bg-card p-3">
+            {analysis && <p className="mb-2 font-semibold">{analysis[lang].question}</p>}
+            <p className="kicker mb-1.5">{tx.howToRead}</p>
+            <p className="mb-2 text-sm">{tx.markedWhen}</p>
+            <ol className="grid gap-2 sm:grid-cols-2">
+              {conditions.map((c, i) => (
+                <li key={c.ind} className="flex gap-2 rounded-sm border bg-muted/40 p-2 text-sm">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{i + 1}</span>
+                  <span>
+                    <strong>{L(c.ind)} {c.dir === "high" ? tx.high : tx.low}</strong>{" "}
+                    <span className="font-mono text-xs">({thresholdText(c, en)})</span>
+                    <span className="block text-xs text-muted-foreground">{en ? indicators[c.ind].hintEn : indicators[c.ind].hint}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
         ) : hint ? (
           <p className="mb-3 max-w-3xl text-sm text-muted-foreground">{hint}</p>
         ) : null}
@@ -178,10 +195,19 @@ function Index() {
                 </>
               ) : (
                 <div className="space-y-1">
-                  <div className="font-medium">{conditions.map((c) => `${L(c.ind)} ${c.dir === "high" ? tx.high : tx.low}`).join(" + ")}</div>
                   <div className="flex items-center gap-2"><span className="h-3 w-5 bg-scale-5" />{tx.allMet(conditions.length)}</div>
                   <div className="flex items-center gap-2"><span className="h-3 w-5 bg-scale-2 opacity-60" />{tx.oneMissing}</div>
-                  <div className="flex items-center gap-2"><span className="h-3 w-5 bg-nodata opacity-40" />{tx.fewer}</div>
+                  <div className="text-muted-foreground">{tx.fewer}</div>
+                </div>
+              )}
+              {(Object.keys(amenities) as AmenityKey[]).some((k) => amenities[k]) && (
+                <div className="mt-2 space-y-1 border-t pt-2">
+                  {(["shop", "doc", "pt"] as AmenityKey[]).filter((k) => amenities[k]).map((k) => (
+                    <div key={k} className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full border border-foreground" style={{ background: dotVar[k] }} />
+                      {tx.amenity[k]}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
