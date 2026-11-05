@@ -53,7 +53,7 @@ export const t = {
   },
   en: {
     map: "Map", sources: "Sources & method", city: "Hanseatic City of Lüneburg",
-    title: "Housing Radar Lüneburg: Where space can be freed up",
+    title: "HOUSING RADAR LÜNEBURG: UNLOCK THE POTENTIAL",
     intro: (avg: string, pop: string) => <>On average, each resident of Lüneburg has <strong className="text-foreground">{avg} m²</strong> of living space ({pop} residents in 17 districts). Nine datasets, merged by district, with no personal data at all.</>,
     detail: "Detailed colours within districts (500 m blocks, 100 m when zoomed in)",
     block: "500 m block", blockCells: "squares in block",
