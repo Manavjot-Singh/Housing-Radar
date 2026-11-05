@@ -5,7 +5,7 @@ import gitter from "@/data/gitter.json";
 import versorgung from "@/data/versorgung.json";
 import { t } from "@/lib/i18n";
 import {
-  blockOf, blockOwn, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
+  blockOf, blockOwn, commercial, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
   type Cell, type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
@@ -171,6 +171,14 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
         }).bindTooltip(`${(lang === "en" ? iconEn : icon)[k]} · ${tx.amenity[k]}`).addTo(pg);
       }
     });
+    if (conditions.some((c) => c.ind === "gewerbeLeerstand")) {
+      for (const [name, lon, lat, objs, vac, risk] of commercial) {
+        const n = vac + risk;
+        Lf.circleMarker([lat, lon], {
+          radius: n ? 5 + n * 2 : 3, color: fg, weight: 1.5, fillColor: n ? primary : cssVar("--card"), fillOpacity: n ? 0.9 : 1,
+        }).bindTooltip(`<b>${name}</b><br>${tx.commercialTip(objs, vac, risk)}`).addTo(pg);
+      }
+    }
     pg.addTo(map);
     layers.current.push(pg);
   }

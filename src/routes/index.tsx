@@ -24,24 +24,24 @@ export const Route = createFileRoute("/")({
 
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
 const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)" };
-const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "bebautAnteil", "einwohnerJeGebaeude"];
+const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "gewerbeLeerstand", "bebautAnteil", "einwohnerJeGebaeude"];
 const defaultDir: Record<Indicator, Dir> = {
   wohnflaecheProKopf: "high", leerstandsquote: "high", anteil65: "high", efhAnteil: "high",
-  raeumeProKopf: "high", versorgung: "low", bebautAnteil: "low", einwohnerJeGebaeude: "low",
+  raeumeProKopf: "high", versorgung: "low", gewerbeLeerstand: "high", bebautAnteil: "low", einwohnerJeGebaeude: "low",
 };
 
 function Index() {
   const [lang] = useLang();
   const tx = t[lang];
   const en = lang === "en";
-  const [conditions, setConditions] = useState<Condition[]>([{ ind: "wohnflaecheProKopf", dir: "high" }]);
+  const [conditions, setConditions] = useState<Condition[]>([]);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [amenities, setAmenities] = useState<Record<AmenityKey, boolean>>({ shop: false, doc: false, pt: false });
   const [selected, setSelected] = useState<string | null>("Wilschenbruch");
 
   const L = (k: Indicator) => (en ? indicators[k].labelEn : indicators[k].label);
-  const unit = (k: Indicator) => (en && indicators[k].unit === "Pers." ? "ppl" : indicators[k].unit);
+  const unit = (k: Indicator) => (en && indicators[k].unit === "Pers." ? "ppl" : en && indicators[k].unit === "Obj." ? "units" : indicators[k].unit);
   const combo = conditions.length > 1;
   const single = conditions.length === 1 ? conditions[0]!.ind : null;
   const analysis = analyses.find((a) => a.id === analysisId);
@@ -49,19 +49,25 @@ function Index() {
   function toggle(k: Indicator) {
     setAnalysisId(null);
     setConditions((cs) => {
-      if (cs.some((c) => c.ind === k)) return cs.length > 1 ? cs.filter((c) => c.ind !== k) : cs;
+      if (cs.some((c) => c.ind === k)) return cs.filter((c) => c.ind !== k);
       return [...cs, { ind: k, dir: defaultDir[k] }];
     });
   }
   function setDir(k: Indicator, dir: Dir) {
     setAnalysisId(null);
-    setConditions((cs) => cs.map((c) => (c.ind === k ? { ...c, dir } : c)));
+    setConditions((cs) => cs.map((c) => (c.ind === k ? { ind: k, dir } : c)));
   }
   function pick(id: string) {
+    if (id === analysisId) return clear();
     const a = analyses.find((x) => x.id === id)!;
     setAnalysisId(id);
     setConditions(a.conditions);
     if (a.conditions.some((c) => c.ind === "versorgung")) setAmenities({ shop: true, doc: true, pt: false });
+  }
+
+  function clear() {
+    setAnalysisId(null);
+    setConditions([]);
   }
 
   // share of residents per district living in 500 m blocks meeting all conditions
@@ -96,21 +102,31 @@ function Index() {
 
         <section className="mb-3">
           <p className="kicker mb-1.5">{tx.analyses}</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {analyses.map((a) => (
               <button key={a.id} onClick={() => pick(a.id)}
                 className={`rounded-sm border px-3 py-1.5 text-left text-sm ${analysisId === a.id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}>
                 {a[lang].title}
               </button>
             ))}
+            {conditions.length > 0 && (
+              <button onClick={clear} className="px-2 py-1.5 text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground">
+                {tx.reset}
+              </button>
+            )}
           </div>
         </section>
 
-        <section className="mb-3 rounded-md border bg-card p-3">
-          <div className="mb-1.5 flex flex-wrap items-baseline gap-x-3">
-            <p className="kicker">{tx.layers}</p>
-            <p className="text-xs text-muted-foreground">{tx.layersHint}</p>
-          </div>
+        <details className="group mb-3 rounded-md border bg-card">
+          <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 p-3 select-none">
+            <span className="text-sm transition-transform group-open:rotate-90">▸</span>
+            <span className="kicker">{tx.layers}</span>
+            <span className="text-xs text-muted-foreground">
+              {conditions.length ? conditions.map((c) => L(c.ind)).join(" · ") : tx.noLayer}
+            </span>
+          </summary>
+          <div className="border-t p-3">
+          <p className="mb-2 text-xs text-muted-foreground">{tx.layersHint}</p>
           <div className="flex flex-wrap gap-2">
             {layerOrder.map((k) => {
               const c = conditions.find((x) => x.ind === k);
@@ -146,7 +162,8 @@ function Index() {
               </label>
             )}
           </div>
-        </section>
+          </div>
+        </details>
 
         {combo ? (
           <section className="mb-3 rounded-md border-l-4 border-primary bg-card p-3">
@@ -174,7 +191,9 @@ function Index() {
           <div className="relative h-[480px] overflow-hidden rounded-md border lg:h-[620px]">
             <RadarMap lang={lang} conditions={conditions} showGrid={showGrid} amenities={amenities} selected={selected} onSelect={setSelected} />
             <div className="pointer-events-none absolute bottom-3 left-3 z-[400] rounded-sm border bg-card/95 p-2 text-xs">
-              {single ? (
+              {conditions.length === 0 ? (
+                <div className="text-muted-foreground">{tx.noLayer}</div>
+              ) : single ? (
                 <>
                   <div className="mb-1 font-medium">{L(single)}{unit(single) ? ` (${unit(single)})` : ""}</div>
                   <div className="flex">

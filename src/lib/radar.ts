@@ -1,4 +1,5 @@
 import blocke from "@/data/blocke.json";
+import gewerbe from "@/data/gewerbe.json";
 import stadtteile from "@/data/stadtteile.json";
 import summary from "@/data/summary.json";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -23,17 +24,42 @@ export type District = {
   abdeckungRaeume: number;
   efhAnteil: number | null;
   versorgung: number | null;
+  gewerbeLeerstand: number | null;
 };
 
-export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "anteil65" | "efhAnteil" | "raeumeProKopf" | "versorgung" | "bebautAnteil" | "einwohnerJeGebaeude";
+export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "anteil65" | "efhAnteil" | "raeumeProKopf" | "versorgung" | "gewerbeLeerstand" | "bebautAnteil" | "einwohnerJeGebaeude";
 
-type DistrictProps = Omit<District, "einwohnerJeGebaeude">;
+type DistrictProps = Omit<District, "einwohnerJeGebaeude" | "gewerbeLeerstand">;
 
 export const geo = stadtteile as unknown as FeatureCollection<Geometry, DistrictProps>;
+
+// ============= Commercial vacancy (LeAn extract) =============
+/** Street: [name, lon, lat, objects, vacant, at risk, reuse agreed] – built by scripts/prepare_gewerbe.py. */
+export type CommercialStreet = [string, number, number, number, number, number, number];
+export const commercial = gewerbe as unknown as CommercialStreet[];
+/** The LeAn extract only covers Altstadt shopping streets; elsewhere commercial vacancy is unknown, not zero. */
+export const COMMERCIAL_DISTRICT = "Altstadt";
+const commercialTotal = commercial.reduce((s, x) => s + x[4] + x[5], 0);
+
+function metres(lon1: number, lat1: number, lon2: number, lat2: number) {
+  const dx = (lon1 - lon2) * 66600, dy = (lat1 - lat2) * 111200;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+/** Vacant + at-risk commercial units within `radius` m, or null outside the area the extract covers. */
+export function commercialNear(lon: number, lat: number, radius: number, covered = radius + 150): number | null {
+  let n = 0, near = false;
+  for (const s of commercial) {
+    const d = metres(lon, lat, s[1], s[2]);
+    if (d <= covered) near = true;
+    if (d <= radius) n += s[4] + s[5];
+  }
+  return near ? n : null;
+}
 
 export const districts: District[] = geo.features.map((f) => ({
   ...f.properties,
   einwohnerJeGebaeude: f.properties.gebaeude > 0 ? f.properties.einwohner / f.properties.gebaeude : 0,
+  gewerbeLeerstand: f.properties.name === COMMERCIAL_DISTRICT ? commercialTotal : null,
 }));
 
 export const districtByName = new Map(districts.map((d) => [d.name, d]));
@@ -86,6 +112,11 @@ export const indicators: Record<
     unit: "/ 3", breaks: [0.5, 1.5, 2.5, 99], decimals: 1, gridSource: true, gridIndex: 8, legend: ["0", "1", "2", "3", ""],
     hint: "Wie viele von drei Angeboten zu Fuß erreichbar sind: Supermarkt (600 m), Arztpraxis (600 m), Bus-/Bahnhalt (400 m).",
   },
+  gewerbeLeerstand: {
+    label: "Gewerbeleerstand", labelEn: "Commercial vacancy", hintEn: "Vacant or soon-to-be-vacant shops and commercial units within 250 m (LeAn extract, Altstadt shopping streets only – no data elsewhere).",
+    unit: "Obj.", breaks: [0.5, 0.9, 1, 3], decimals: 0, gridSource: true, legend: ["0", "", "", "1–2", "≥ 3"],
+    hint: "Leerstehende oder bald leerstehende Läden und Gewerbeflächen im Umkreis von 250 m (LeAn-Auszug, nur Altstadt-Einkaufsstraßen – anderswo keine Angabe).",
+  },
   bebautAnteil: {
     label: "Bebauungsdichte", labelEn: "Building density", hintEn: "Share of district area covered by building footprints.",
     unit: "%",
@@ -122,6 +153,7 @@ export type Cell = [number, number, number | null, number | null, number | null,
 
 /** The cell's own value, or null when the census publishes none (or the indicator only exists per district). */
 export function cellOwn(c: Cell, ind: Indicator): number | null {
+  if (ind === "gewerbeLeerstand") return c[9] === COMMERCIAL_DISTRICT ? commercialNear(c[0], c[1], 250) : null;
   const i = indicators[ind].gridIndex;
   return i == null ? null : (c[i] as number | null);
 }
@@ -129,7 +161,7 @@ export function cellOwn(c: Cell, ind: Indicator): number | null {
 /** The cell's value with the district value as fallback, used for combined analyses. */
 export function cellValue(c: Cell, ind: Indicator): number | null {
   const own = cellOwn(c, ind);
-  if (own != null) return own;
+  if (own != null || ind === "gewerbeLeerstand") return own;
   const d = districtByName.get(c[9]);
   return d ? value(d, ind) : null;
 }
@@ -155,6 +187,11 @@ export function blockOf(c: Cell): Block | null {
 
 /** The block's own value, or null when no cell in it carries one. */
 export function blockOwn(b: Block, ind: Indicator): number | null {
+  if (ind === "gewerbeLeerstand") {
+    if (b[10] !== COMMERCIAL_DISTRICT) return null;
+    const [, ix, iy] = b[0].split("|").map(Number);
+    return commercialNear(BLOCK_LON0 + (ix! + 0.5) * BLOCK_DLON, BLOCK_LAT0 + (iy! + 0.5) * BLOCK_DLAT, 400);
+  }
   const i = indicators[ind].gridIndex;
   return i == null ? null : (b[i - 1] as number | null);
 }
@@ -162,7 +199,7 @@ export function blockOwn(b: Block, ind: Indicator): number | null {
 /** The block's value with the district value as fallback. */
 export function blockValueOf(b: Block, ind: Indicator): number | null {
   const own = blockOwn(b, ind);
-  if (own != null) return own;
+  if (own != null || ind === "gewerbeLeerstand") return own;
   const d = districtByName.get(b[10]);
   return d ? value(d, ind) : null;
 }
@@ -174,20 +211,22 @@ export function blockValue(c: Cell, ind: Indicator): number | null {
 }
 
 export type Dir = "high" | "low";
-export type Condition = { ind: Indicator; dir: Dir };
+/** `min` overrides the default "high" threshold, e.g. for an analysis that needs a lower bar. */
+export type Condition = { ind: Indicator; dir: Dir; min?: number };
 
 /** High = top two colour classes, low = bottom two. */
 export function meets(v: number | null, cond: Condition): boolean | null {
   if (v == null) return null;
   const b = indicators[cond.ind].breaks;
-  return cond.dir === "high" ? v >= b[2]! : v < b[1]!;
+  return cond.dir === "high" ? v >= (cond.min ?? b[2]!) : v < b[1]!;
 }
 
 /** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 3" for low. */
 export function thresholdText(cond: Condition, en = false): string {
   const i = indicators[cond.ind];
   const u = en && i.unit === "Pers." ? "ppl" : i.unit;
-  const x = cond.dir === "high" ? i.breaks[2]! : i.breaks[1]!;
+  const x = cond.dir === "high" ? (cond.min ?? i.breaks[2]!) : i.breaks[1]!;
+  if (cond.ind === "gewerbeLeerstand") return cond.dir === "high" ? (en ? "≥ 1 unit within 250 m" : "≥ 1 Objekt im Umkreis von 250 m") : (en ? "none nearby" : "keins in der Nähe");
   if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "all 3 nearby" : "alle 3 in der Nähe") : (en ? "0–1 of 3 nearby" : "0–1 von 3 in der Nähe");
   return `${cond.dir === "high" ? "≥" : "<"} ${fmtNum(x)}${u ? " " + u : ""}`;
 }
@@ -210,6 +249,12 @@ export const analyses: Analysis[] = [
     conditions: [{ ind: "wohnflaecheProKopf", dir: "high" }, { ind: "anteil65", dir: "high" }],
     de: { title: "Viel Fläche, ältere Bewohner", question: "Wo leben viele Ältere auf viel Wohnfläche?", action: "Wohnungstausch und altersgerechte Wohnungen in der Nähe anbieten – frei werdende Häuser für Familien." },
     en: { title: "Large homes, older residents", question: "Where do many older people live on a lot of space?", action: "Offer home swaps and age-friendly flats nearby – freeing up houses for families." },
+  },
+  {
+    id: "wohn-gewerbe-leerstand",
+    conditions: [{ ind: "leerstandsquote", dir: "high", min: 10 }, { ind: "gewerbeLeerstand", dir: "high" }],
+    de: { title: "Wohn- und Gewerbeleerstand", question: "Wo stehen Wohnungen leer und zugleich Läden oder Gewerbeflächen?", action: "Gewerbeleerstand abbauen: leere Läden für Community-Projekte, Pop-up-Nutzungen oder Umbau zu Wohnungen öffnen – eine belebte Straße macht auch die Wohnungen darüber wieder gefragt." },
+    en: { title: "Housing and commercial vacancy", question: "Where are dwellings empty and shops or commercial units too?", action: "Reduce commercial vacancy: open empty shops for community projects, pop-ups or conversion to flats – a lively street makes the homes above attractive again." },
   },
 ];
 
@@ -266,5 +311,6 @@ export const sources: Source[] = [
   { en: { name: "Census 2022 – Share aged 65+", content: "Share of residents aged 65 and over", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Anteil ab 65-Jährige", publisher: "Statistisches Bundesamt", content: "Anteil der Einwohner ab 65 Jahren", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { en: { name: "Census 2022 – Buildings by number of dwellings", content: "Residential buildings with 1, 2, 3–6, 7–12, 13+ dwellings", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Gebäude nach Anzahl der Wohnungen", publisher: "Statistisches Bundesamt", content: "Wohngebäude mit 1, 2, 3–6, 7–12, 13+ Wohnungen", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { en: { name: "Census 2022 – Dwellings by number of rooms", content: "Dwellings with 1 to 7+ rooms", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Wohnungen nach Zahl der Räume", publisher: "Statistisches Bundesamt", content: "Wohnungen mit 1 bis 7+ Räumen", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
+  { en: { name: "LeAn extract – commercial vacancy", content: "55 commercial units in Altstadt shopping streets with status (4 vacant, 4 at risk); owner data removed", level: "Street (house numbers anonymised)", status: "Extract provided by the city for the hackathon" }, name: "LeAn-Auszug – Gewerbeleerstand", publisher: "Hansestadt Lüneburg, Leerstandsmanagement (LeAn)", content: "55 Gewerbeobjekte in Altstadt-Einkaufsstraßen mit Status (4 leer, 4 drohend leer); Eigentümerdaten entfernt", licence: "Bereitgestellt für den Hackathon (Ausnahme laut Challenge)", level: "Straße (Hausnummern anonymisiert)", status: "Auszug der Stadt für den Hackathon", url: "https://www.hansestadt-lueneburg.de" },
   { en: { name: "OpenStreetMap amenities", content: "62 supermarkets, 80 doctors' practices, 513 bus/rail stops", level: "Points", status: "Retrieved 5 Nov 2026" }, name: "Versorgung aus OpenStreetMap", publisher: "OpenStreetMap-Mitwirkende", content: "62 Supermärkte, 80 Arztpraxen, 513 Bus-/Bahnhalte", level: "Punkte", licence: "ODbL 1.0", status: "Abruf 05.11.2026", url: "https://www.openstreetmap.org" },
 ];
