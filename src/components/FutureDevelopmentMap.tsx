@@ -41,7 +41,7 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
       const blk = futureBlocks[b.idx];
       if (!blk) return;
       const e = evaluate(blk, th);
-      const inFocus = fRef.current.has(blk.id);
+      const inFocus = fRef.current instanceof Set && fRef.current.has(blk.id);
       const path = l as import("leaflet").Path;
       path.setStyle(e.pass
         ? inFocus
