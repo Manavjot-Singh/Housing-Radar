@@ -14,7 +14,7 @@ export function FutureDevelopmentPlans() {
   const districts = [...new Set(hits.map((b) => b.d))].sort();
   const fmt = (x: number) => x.toLocaleString(en ? "en-GB" : "de-DE", { maximumFractionDigits: 0 });
 
-  const sliders: { key: keyof Thresholds; label: string; min: number; max: number; step: number; show: string }[] = [
+  const sliders: { key: "living" | "vacancy" | "coverage"; label: string; min: number; max: number; step: number; show: string }[] = [
     { key: "living", label: en ? "Living space per resident below" : "Wohnfläche je Einwohner unter", min: 30, max: 70, step: 1, show: `${t.living} m²` },
     { key: "vacancy", label: en ? "Vacancy at most" : "Leerstand höchstens", min: 0, max: 25, step: 0.5, show: `${t.vacancy} %` },
     { key: "coverage", label: en ? "Building coverage at most" : "Bebauung höchstens", min: 1, max: 40, step: 1, show: `${t.coverage} %` },
