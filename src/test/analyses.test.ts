@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { analyses } from "@/lib/radar";
 
-// The user dropped two ready-made analyses; they must not come back.
+// The user dropped three ready-made analyses; they must not come back.
 describe("Ready-made analyses", () => {
   const ids = analyses.map((a) => a.id);
 
