@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import type * as L from "leaflet";
 import gitter from "@/data/gitter.json";
+import { t } from "@/lib/i18n";
 import { districtByName, geo, indicators, scaleClass, value, type District, type Indicator } from "@/lib/radar";
 
 type Props = {
+  lang: "de" | "en";
   indicator: Indicator;
   showGrid: boolean;
   selected: string | null;
@@ -20,7 +22,7 @@ function color(c: number) {
   return c === 0 ? cssVar("--nodata") : cssVar(`--scale-${c}`);
 }
 
-export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
+export function RadarMap({ lang, indicator, showGrid, selected, onSelect }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const libRef = useRef<typeof L | null>(null);
@@ -28,6 +30,8 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
   const gridLayer = useRef<L.LayerGroup | null>(null);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const renderRef = useRef<() => void>(() => {});
+  renderRef.current = render;
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +46,7 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
         opacity: 0.45,
       }).addTo(map);
       mapRef.current = map;
-      map.on("zoomend", () => render());
+      map.on("zoomend", () => renderRef.current());
       render();
       map.fitBounds(districtLayer.current!.getBounds(), { padding: [10, 10] });
     });
@@ -57,7 +61,7 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
   useEffect(() => {
     render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [indicator, showGrid, selected]);
+  }, [indicator, showGrid, selected, lang]);
 
   function render() {
     const Lf = libRef.current;
@@ -68,6 +72,8 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
     const fg = cssVar("--foreground");
     const primary = cssVar("--primary");
 
+    const tx = t[lang];
+    const f1 = (x: number) => x.toLocaleString(lang === "en" ? "en-GB" : "de-DE", { maximumFractionDigits: 1 });
     const detail = (showGrid || map.getZoom() >= 15) && indicators[indicator].gridSource;
     if (detail) {
       const grp = Lf.layerGroup();
@@ -79,7 +85,7 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
           stroke: false, fillColor: color(scaleClass(v, indicator)), fillOpacity: 0.85, renderer,
         })
           .bindTooltip(
-            `<b>100-m-Quadrat · ${c[5]}</b><br>Einwohner: ${c[2] ?? "–"}<br>Wohnfläche/Kopf: ${c[3] != null ? c[3].toFixed(1).replace(".", ",") + " m²" : "–"}<br>Leerstand: ${c[4] != null ? c[4].toFixed(1).replace(".", ",") + " %" : "keine Angabe"}`,
+            `<b>${tx.cell} · ${c[5]}</b><br>${tx.cellRes}: ${c[2] ?? "–"}<br>${tx.cellLiving}: ${c[3] != null ? f1(c[3]) + " m²" : "–"}<br>${tx.cellVac}: ${c[4] != null ? f1(c[4]) + " %" : tx.noData}`,
             { sticky: true },
           )
           .on("click", () => onSelectRef.current(c[5]))
