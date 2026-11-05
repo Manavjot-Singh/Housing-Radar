@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
 });
 
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
-const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)" };
+const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)", bakery: "var(--poi-bakery)" };
 const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "gewerbeLeerstand", "bebautAnteil", "einwohnerJeGebaeude"];
 function weighted(k: keyof Profile & keyof (typeof districts)[number]) {
   let s = 0, w = 0;
@@ -56,7 +56,7 @@ function Index() {
   const [conditions, setConditions] = useState<Condition[]>([]);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
-  const [amenities, setAmenities] = useState<Record<AmenityKey, boolean>>({ shop: false, doc: false, pt: false });
+  const [amenities, setAmenities] = useState<Record<AmenityKey, boolean>>({ shop: false, doc: false, pt: false, bakery: false });
   const [selected, setSelected] = useState<string | null>("Wilschenbruch");
 
   const L = (k: Indicator) => (en ? indicators[k].labelEn : indicators[k].label);
@@ -81,7 +81,7 @@ function Index() {
     const a = analyses.find((x) => x.id === id)!;
     setAnalysisId(id);
     setConditions(a.conditions);
-    if (a.conditions.some((c) => c.ind === "versorgung")) setAmenities({ shop: true, doc: true, pt: false });
+    if (a.conditions.some((c) => c.ind === "versorgung")) setAmenities({ shop: true, doc: true, pt: false, bakery: true });
   }
 
   function clear() {
@@ -152,7 +152,7 @@ function Index() {
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-2 text-sm">
             <span className="text-muted-foreground">{tx.showPoints}:</span>
-            {(["shop", "doc", "pt"] as AmenityKey[]).map((k) => (
+            {(["shop", "bakery", "doc", "pt"] as AmenityKey[]).map((k) => (
               <label key={k} className="flex cursor-pointer items-center gap-1.5">
                 <input type="checkbox" checked={amenities[k]} onChange={(e) => setAmenities((a) => ({ ...a, [k]: e.target.checked }))} className="accent-primary" />
                 {tx.amenity[k]}
@@ -222,7 +222,7 @@ function Index() {
               )}
               {(Object.keys(amenities) as AmenityKey[]).some((k) => amenities[k]) && (
                 <div className="mt-2 space-y-1 border-t pt-2">
-                  {(["shop", "doc", "pt"] as AmenityKey[]).filter((k) => amenities[k]).map((k) => (
+                  {(["shop", "bakery", "doc", "pt"] as AmenityKey[]).filter((k) => amenities[k]).map((k) => (
                     <div key={k} className="flex items-center gap-2">
                       <span className="inline-block h-2.5 w-2.5 rounded-full border border-foreground" style={{ background: dotVar[k] }} />
                       {tx.amenity[k]}

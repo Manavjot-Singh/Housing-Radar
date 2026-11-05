@@ -68,6 +68,7 @@
   --scale-4: oklch(0.72 0.11 35);
   --scale-5: oklch(0.45 0.15 15);
   --poi-doc: oklch(0.55 0.13 150);
+  --poi-bakery: oklch(0.7 0.13 75);
   --nodata: oklch(0.85 0.005 80);
 }
 
