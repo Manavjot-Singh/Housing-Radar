@@ -1,3 +1,4 @@
+import blocke from "@/data/blocke.json";
 import stadtteile from "@/data/stadtteile.json";
 import summary from "@/data/summary.json";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -131,6 +132,45 @@ export function cellValue(c: Cell, ind: Indicator): number | null {
   if (own != null) return own;
   const d = districtByName.get(c[9]);
   return d ? value(d, ind) : null;
+}
+
+// ============= 500 m blocks =============
+// The 100 m census squares are ~4 pixels wide in the city overview, so the map groups them
+// into ~500 m blocks (5 x 5 cells) that never cross a district border. scripts/prepare_blocks.py
+// builds them from gitter.json; the tile grid below must stay identical to that script.
+const BLOCK_LON0 = 10.30, BLOCK_LAT0 = 53.10, BLOCK_DLON = 0.0075, BLOCK_DLAT = 0.0045;
+
+/** Block: [key, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling %, rooms/person, amenities, cells, vacancy coverage %, district]. */
+export type Block = [string, number, number | null, number | null, number | null, number | null, number | null, number, number, number, string];
+
+export const blocks = blocke as unknown as Block[];
+const blockByKey = new Map(blocks.map((b) => [b[0], b]));
+
+/** The block a cell belongs to, or null if the tile has no block (should not happen). */
+export function blockOf(c: Cell): Block | null {
+  const ix = Math.floor((c[0] - BLOCK_LON0) / BLOCK_DLON);
+  const iy = Math.floor((c[1] - BLOCK_LAT0) / BLOCK_DLAT);
+  return blockByKey.get(`${c[9]}|${ix}|${iy}`) ?? null;
+}
+
+/** The block's own value, or null when no cell in it carries one. */
+export function blockOwn(b: Block, ind: Indicator): number | null {
+  const i = indicators[ind].gridIndex;
+  return i == null ? null : (b[i - 1] as number | null);
+}
+
+/** The block's value with the district value as fallback. */
+export function blockValueOf(b: Block, ind: Indicator): number | null {
+  const own = blockOwn(b, ind);
+  if (own != null) return own;
+  const d = districtByName.get(b[10]);
+  return d ? value(d, ind) : null;
+}
+
+/** The value of the block the cell sits in, with the district value as fallback. */
+export function blockValue(c: Cell, ind: Indicator): number | null {
+  const b = blockOf(c);
+  return b ? blockValueOf(b, ind) : null;
 }
 
 export type Dir = "high" | "low";
