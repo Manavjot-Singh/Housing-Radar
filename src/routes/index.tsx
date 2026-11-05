@@ -9,8 +9,9 @@ import { recommend, type Profile } from "@/lib/recommendations";
 import {
   analyses, thresholdText, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
   type Condition, type Dir, type Indicator,
-  setAmenitySelection,
+  setAmenitySelection, cityName, hasGewerbe,
 } from "@/lib/radar";
+import { useCityKey } from "@/lib/city";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +52,11 @@ const defaultDir: Record<Indicator, Dir> = {
 };
 
 function Index() {
+  const key = useCityKey();
+  return <Dashboard key={key} />;
+}
+
+function Dashboard() {
   const [lang] = useLang();
   const tx = t[lang];
   const en = lang === "en";
@@ -58,13 +64,16 @@ function Index() {
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [amenities, setAmenities] = useState<Record<AmenityKey, boolean>>({ shop: false, doc: false, pt: false, bakery: false });
-  const [selected, setSelected] = useState<string | null>("Wilschenbruch");
+  const [selected, setSelected] = useState<string | null>(() => districts.some((d) => d.name === "Wilschenbruch") ? "Wilschenbruch" : [...districts].sort((a, b) => b.einwohner - a.einwohner)[0]?.name ?? null);
 
   const L = (k: Indicator) => (en ? indicators[k].labelEn : indicators[k].label);
   const unit = (k: Indicator) => (en && indicators[k].unit === "Pers." ? "ppl" : en && indicators[k].unit === "Obj." ? "units" : indicators[k].unit);
   const combo = conditions.length > 1;
   const single = conditions.length === 1 ? conditions[0]!.ind : null;
   const analysis = analyses.find((a) => a.id === analysisId);
+  const shownAnalyses = analyses.filter((a) => hasGewerbe || !a.conditions.some((c) => c.ind === "gewerbeLeerstand"));
+  const shownLayers = layerOrder.filter((k) => hasGewerbe || k !== "gewerbeLeerstand");
+  const title = cityName === "Lüneburg" ? tx.title : tx.title.replace(/LÜNEBURG/i, cityName.toUpperCase());
 
   function toggle(k: Indicator) {
     setAnalysisId(null);
@@ -103,13 +112,13 @@ function Index() {
       <SiteHeader />
       <main className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-5 max-w-3xl">
-          <h1 className="text-4xl font-bold uppercase leading-none sm:text-5xl">{tx.title}</h1>
+          <h1 className="text-4xl font-bold uppercase leading-none sm:text-5xl">{title}</h1>
         </div>
 
         <section className="mb-3">
           <p className="kicker mb-1.5">{tx.analyses}</p>
           <div className="flex flex-wrap items-center gap-2">
-            {analyses.map((a) => (
+            {shownAnalyses.map((a) => (
               <button key={a.id} onClick={() => pick(a.id)}
                 className={`rounded-sm border px-3 py-1.5 text-left text-sm ${analysisId === a.id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}>
                 {a[lang].title}
@@ -134,7 +143,7 @@ function Index() {
           <div className="border-t p-3">
           <p className="mb-2 text-xs text-muted-foreground">{tx.layersHint}</p>
           <div className="flex flex-wrap gap-2">
-            {layerOrder.map((k) => {
+            {shownLayers.map((k) => {
               const c = conditions.find((x) => x.ind === k);
               return (
                 <div key={k} className={`flex items-center rounded-sm border text-sm ${c ? "border-primary" : ""}`}>

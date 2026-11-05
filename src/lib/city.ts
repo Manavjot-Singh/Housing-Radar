@@ -6,7 +6,6 @@ import { setFutureBlocks } from "./future";
 import type { CityData } from "./cityBuild";
 
 export type { CityData };
-export const TILE_DLON = 0.15, TILE_DLAT = 0.1; // keep in sync with scripts/prepare_zensus_ni.py
 
 let current: CityData | null = null;
 let version = 0;
