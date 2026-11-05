@@ -30,6 +30,8 @@ export function RadarMap({ lang, indicator, showGrid, selected, onSelect }: Prop
   const gridLayer = useRef<L.LayerGroup | null>(null);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const renderRef = useRef<() => void>(() => {});
+  renderRef.current = render;
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +46,7 @@ export function RadarMap({ lang, indicator, showGrid, selected, onSelect }: Prop
         opacity: 0.45,
       }).addTo(map);
       mapRef.current = map;
-      map.on("zoomend", () => render());
+      map.on("zoomend", () => renderRef.current());
       render();
       map.fitBounds(districtLayer.current!.getBounds(), { padding: [10, 10] });
     });
