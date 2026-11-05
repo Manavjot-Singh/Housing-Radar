@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
-const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--primary)", pt: "var(--card)" };
+const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--foreground)", pt: "var(--card)" };
 const cells = gitter as unknown as Cell[];
 const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "bebautAnteil", "einwohnerJeGebaeude"];
 const defaultDir: Record<Indicator, Dir> = {
