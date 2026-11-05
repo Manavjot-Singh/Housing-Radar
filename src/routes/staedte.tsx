@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CityMap } from "@/components/CityMap";
 import { useLang } from "@/lib/i18n";
-import { fetchDistricts, loadCensus, searchCities, type CensusRow, type CityHit, type DistrictSet } from "@/lib/citySearch";
+import { districtName, fetchDistricts, loadCensus, searchCities, type CensusRow, type CityHit, type DistrictSet } from "@/lib/citySearch";
 
 export const Route = createFileRoute("/staedte")({
   head: () => ({
@@ -64,7 +64,7 @@ function Staedte() {
   }
 
   const active = sets.find((s) => s.level === level) ?? null;
-  const names = active ? active.geojson.features.map((f) => (f.properties as { tags?: Record<string, string> }).tags?.name ?? "?").sort((a, b) => a.localeCompare(b, "de")) : [];
+  const names = active ? active.geojson.features.map((f) => districtName(f)).sort((a, b) => a.localeCompare(b, "de")) : [];
 
   const stats: [string, string][] = census ? [
     [en ? "Residents" : "Einwohner", census.einwohner?.toLocaleString(loc) ?? "–"],

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
+import { districtName } from "@/lib/citySearch";
 
 export function CityMap({ outline, districts, lang }: { outline: GeoJSON.Geometry | null; districts: GeoJSON.FeatureCollection | null; lang: "de" | "en" }) {
   const el = useRef<HTMLDivElement>(null);
@@ -23,7 +24,7 @@ export function CityMap({ outline, districts, lang }: { outline: GeoJSON.Geometr
         const d = L.geoJSON(districts as never, {
           style: { color: primary, weight: 1.5, fillColor: primary, fillOpacity: 0.12 },
           onEachFeature: (f, layer) => {
-            const name = (f.properties as { tags?: Record<string, string> }).tags?.name ?? "?";
+            const name = districtName(f);
             layer.bindTooltip(name, { sticky: true });
             layer.on("mouseover", () => (layer as import("leaflet").Path).setStyle({ fillOpacity: 0.35 }));
             layer.on("mouseout", () => (layer as import("leaflet").Path).setStyle({ fillOpacity: 0.12 }));
