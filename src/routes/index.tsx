@@ -53,7 +53,7 @@ function Index() {
           {ind.gridSource && (
             <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm">
               <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} className="accent-primary" />
-              100-m-Raster anzeigen
+              Detailansicht: 100-m-Quadrate (schaltet sich beim Hineinzoomen automatisch ein)
             </label>
           )}
         </div>
