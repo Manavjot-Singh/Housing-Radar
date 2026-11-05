@@ -1,5 +1,6 @@
 import stadtteile from "@/data/stadtteile.json";
 import summary from "@/data/summary.json";
+import type { FeatureCollection, Geometry } from "geojson";
 
 export type District = {
   name: string;
@@ -15,7 +16,7 @@ export type District = {
 
 export type Indicator = "wohnflaecheProKopf" | "leerstandsquote";
 
-export const geo = stadtteile as unknown as GeoJSON.FeatureCollection<GeoJSON.Geometry, District>;
+export const geo = stadtteile as unknown as FeatureCollection<Geometry, District>;
 export const districts: District[] = geo.features.map((f) => f.properties);
 export const cityAvg = summary.stadtWohnflaecheProKopf;
 export const cityPopulation = summary.einwohner;
