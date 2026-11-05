@@ -53,12 +53,14 @@ for (x,y) in set(bev)|set(wf)|set(geb):
     g=geb.get((x,y));efh=None;gt=gk=0
     if g:
         tot=num(g['Insgesamt_Gebaeude']);parts=[num(g[k]) for k in('1_Wohnung','2_Wohnungen','3bis6_Wohnungen','7bis12_Wohnungen','13undmehr_Wohnungen')]
-        if tot and all(v is not None for v in parts) or (tot and sum(v or 0 for v in parts)==tot):
+        tot=sum(v or 0 for v in parts)  # '–' = 0; parts are rounded/perturbed, so use their sum
+        if tot:
             s=(parts[0] or 0)+(parts[1] or 0);efh=round(s/tot*100);gt=tot;gk=s
     r=rm.get((x,y));rooms=None
     if r and ew>0:
         ks=['1Raum','2Raeume','3Raeume','4Raeume','5Raeume','6Raeume','7undmehrRaeume'];vals=[num(r[k]) for k in ks];tot=num(r['Insgesamt_Wohnungen'])
-        if tot and sum(v or 0 for v in vals)==tot:
+        tot=sum(v or 0 for v in vals)
+        if tot:
             rooms=sum((i+1)*(v or 0) for i,v in enumerate(vals))/ew
             if rooms>6:rooms=None
     dist={k:trees[k].query([x,y])[0] for k in trees}
