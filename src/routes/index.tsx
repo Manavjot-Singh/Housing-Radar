@@ -95,8 +95,7 @@ function Index() {
                     <div><dt className="text-xs text-muted-foreground">{tx.perBuilding}</dt><dd className="font-display text-xl font-semibold text-primary">{fmt1(sel.einwohnerJeGebaeude)}</dd></div>
                   </div>
                   <p className="mt-2 border-t pt-2 text-xs text-muted-foreground">
-                    {sel.einwohner.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} Einwohner verteilt auf {sel.gebaeude.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} amtlich erfasste Gebäude – das sind{" "}
-                    {fmt1(sel.einwohnerJeGebaeude)} Personen je Gebäude.
+                    {tx.spread(fmtInt(sel.einwohner), fmtInt(sel.gebaeude), fmt1(sel.einwohnerJeGebaeude))}
                   </p>
                 </div>
 
