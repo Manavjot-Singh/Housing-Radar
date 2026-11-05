@@ -88,7 +88,6 @@ function osmPolys(els: OsmEl[]): Poly[] {
   return out;
 }
 
-const num = (x: unknown) => (typeof x === "number" ? x : null);
 const r1 = (x: number) => Math.round(x * 10) / 10;
 const r2 = (x: number) => Math.round(x * 100) / 100;
 
@@ -204,8 +203,9 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
     add(a.wf, c[3]); add(a.ls, c[4]); add(a.o, c[5]); add(a.r, c[7]);
     a.am[0] += ((c[8] as number) ? 1 : 0) * ew; a.am[1] += ew;
   }
-  const totWf = [...agg.values()].reduce((t, a) => [t[0] + a.wf[0], t[1] + a.wf[1]], [0, 0]);
-  const cityAvg = totWf[1] ? r1(totWf[0] / totWf[1]) : 0;
+  let wSum = 0, wW = 0;
+  for (const a of agg.values()) { wSum += a.wf[0]; wW += a.wf[1]; }
+  const cityAvg = wW ? r1(wSum / wW) : 0;
   const mean = (t: [number, number], d = 1) => (t[1] ? Math.round((t[0] / t[1]) * 10 ** d) / 10 ** d : null);
   const features = districts.map((d) => {
     const a = agg.get(d.name)!; const b = bAgg.get(d.name) ?? { n: 0, m2: 0, res: 0 };
@@ -249,7 +249,6 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   }
 
   // ---- future development blocks: 100 m sampling of exclusion areas
-  const excl = osmPolys(exclEls);
   const tagged = (pred: (t: Tags) => boolean) => osmPolys(exclEls.filter((x) => pred(x.tags ?? {})));
   const testers = {
     nsg: makeTester(nsg), lsg: makeTester(lsg),
@@ -259,7 +258,6 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
     parking: makeTester(tagged((t) => t.amenity === "parking")),
     green: makeTester(tagged((t) => !!t.leisure)),
   };
-  void excl;
   const SX = BLOCK_DLON / 5, SY = BLOCK_DLAT / 5; // ≈100 m
   const zukunft: Record<string, unknown>[] = [];
   for (const [k, cs] of groups) {
@@ -267,7 +265,6 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
     const ix = Number(ixs), iy = Number(iys);
     const d = districts.find((x) => x.name === dn)!;
     let land = 0, free = 0; const cnt: Record<string, number> = {};
-    const freeTest: ((x: number, y: number) => boolean)[] = [];
     for (let a = 0; a < 5; a++) for (let b = 0; b < 5; b++) {
       const x = LON0 + ix * BLOCK_DLON + (a + 0.5) * SX, y = LAT0 + iy * BLOCK_DLAT + (b + 0.5) * SY;
       if (!d.test(x, y)) continue;
@@ -276,7 +273,6 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
       for (const [name, t] of Object.entries(testers)) if (t(x, y)) { cnt[name] = (cnt[name] ?? 0) + 1; hit = true; }
       if (!hit) free++;
     }
-    void freeTest;
     if (!land) continue;
     const bs = bInBlock.get(k) ?? [];
     const builtM2 = bs.filter((b) => !Object.values(testers).some((t) => t(b.c[0], b.c[1]))).reduce((a, b) => a + b.m2, 0);
@@ -294,7 +290,6 @@ export async function buildCity(input: { osmId: number; ags: string; name: strin
   }
 
   const ew = features.reduce((a, f) => a + f.properties.einwohner, 0);
-  void num;
   return {
     id: input.ags, name: input.name, ags: input.ags, hasFnp: false, hasGewerbe: false,
     blockOrigin: [LON0, LAT0],
