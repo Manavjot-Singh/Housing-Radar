@@ -70,7 +70,7 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
     if (showGrid) {
       const grp = Lf.layerGroup();
       for (const c of gitter as Cell[]) {
-        const v = indicator === "wohnflaecheProKopf" ? c[3] : c[4];
+        const v = indicator === "wohnflaecheProKopf" ? c[3] : indicator === "leerstandsquote" ? c[4] : null;
         const dLat = 0.00045, dLon = 0.00075;
         Lf.rectangle([[c[1] - dLat, c[0] - dLon], [c[1] + dLat, c[0] + dLon]], {
           stroke: false, fillColor: color(scaleClass(v, indicator)), fillOpacity: 0.85, interactive: false,
