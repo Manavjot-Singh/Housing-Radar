@@ -60,15 +60,23 @@ export async function searchCities(q: string): Promise<CityHit[]> {
     });
 }
 
+const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+
 export type DistrictSet = { level: string; geojson: GeoJSON.FeatureCollection };
 
 /** Sub-municipal admin boundaries (admin_level 9/10) inside the city, grouped by level. */
 export async function fetchDistricts(osmId: number): Promise<DistrictSet[]> {
-  const q = `[out:json][timeout:60];rel(${osmId});map_to_area->.a;rel(area.a)[boundary=administrative][admin_level~"^(9|10)$"];out geom;`;
-  const res = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-  if (!res.ok) throw new Error(`Overpass ${res.status}`);
+  const q = `[out:json][timeout:60];area(${3600000000 + osmId})->.a;rel(area.a)[boundary=administrative][admin_level~"^(9|10)$"];out geom;`;
+  let json: unknown = null;
+  for (const server of OVERPASS) {
+    try {
+      const res = await fetch(server, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+      if (res.ok) { json = await res.json(); break; }
+    } catch { /* try next mirror */ }
+  }
+  if (!json) throw new Error("Overpass unavailable");
   const osmtogeojson = (await import("osmtogeojson")).default;
-  const fc = osmtogeojson(await res.json()) as GeoJSON.FeatureCollection;
+  const fc = osmtogeojson(json as never) as GeoJSON.FeatureCollection;
   const polys = fc.features.filter((f) => f.geometry && /Polygon/.test(f.geometry.type) && (f.properties as { type?: string })?.type === "relation");
   const byLevel = new Map<string, GeoJSON.Feature[]>();
   for (const f of polys) {

@@ -119,7 +119,7 @@ function Staedte() {
           <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
             <div className="relative overflow-hidden rounded-md border">
               <CityMap outline={city.outline} districts={active?.geojson ?? null} lang={lang} />
-              {loadingDistricts && <div className="absolute left-3 top-3 z-[400] rounded-sm border bg-card px-2 py-1 text-xs">{en ? "Loading districts…" : "Lade Stadtteile…"}</div>}
+              {loadingDistricts && <div className="absolute right-3 top-3 z-[400] rounded-sm border bg-card px-2 py-1 text-xs">{en ? "Loading districts…" : "Lade Stadtteile…"}</div>}
             </div>
             <aside className="flex flex-col gap-4">
               <section className="rounded-md border bg-card p-4">
