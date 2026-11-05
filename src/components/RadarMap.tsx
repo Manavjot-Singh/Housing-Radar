@@ -110,7 +110,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
         let marks: (boolean | null)[] = [];
         if (combo) {
           if (!c[2]) continue;
-          const res = conditions.map((k) => meets(shown(k), k));
+          const res = conditions.map((k) => meets(shown(k.ind), k));
           marks = res;
           const hit = res.filter((r) => r === true).length;
           if (hit === conditions.length) fill = color(5);
