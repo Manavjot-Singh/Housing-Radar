@@ -48,7 +48,7 @@ describe("quadrants", () => {
     const a = { ...base, id: "X|15|33", freeHa: 5, resHa: 0 };
     const b = { ...base, id: "X|10|30", freeHa: 5, resHa: 8 };
     const r = quadrantStats([a, b], { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false });
-    expect(r[0].q).toBe("SW");
-    expect(r[0].score).toBe(13);
+    expect(r[0]!.q).toBe("SW");
+    expect(r[0]!.score).toBe(13);
   });
 });

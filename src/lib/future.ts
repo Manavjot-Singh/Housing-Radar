@@ -59,7 +59,7 @@ export function quadrantStats(blocks: FutureBlock[], t: Thresholds): QuadrantSta
   const out = QUADRANTS.map((q) => ({ q, blocks: 0, hits: 0, hitHa: 0, planHa: 0, farmHa: 0, exclPct: 0, score: 0 }));
   const area: Record<Quadrant, number> = { NW: 0, NE: 0, SW: 0, SE: 0 };
   for (const b of blocks) {
-    const s = out[QUADRANTS.indexOf(quadrantOf(b))];
+    const s = out[QUADRANTS.indexOf(quadrantOf(b))]!;
     s.blocks++;
     if (evaluate(b, t).pass) { s.hits++; s.hitHa += b.freeHa; }
     s.planHa += b.resHa;

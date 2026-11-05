@@ -17,7 +17,7 @@ export function FutureDevelopmentPlans() {
     SW: { de: "Südwesten", en: "south-west" }, SE: { de: "Südosten", en: "south-east" },
   };
   const QS: Record<Quadrant, string> = { NW: "NW", NE: en ? "NE" : "NO", SW: "SW", SE: en ? "SE" : "SO" };
-  const best = quads[0], second = quads[1];
+  const best = quads[0]!, second = quads[1]!;
   const districts = [...new Set(hits.map((b) => b.d))].sort();
   const fmt = (x: number) => x.toLocaleString(en ? "en-GB" : "de-DE", { maximumFractionDigits: 0 });
 
