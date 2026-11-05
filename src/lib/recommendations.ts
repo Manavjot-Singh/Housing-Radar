@@ -46,7 +46,7 @@ export function recommend(p: Profile, ref: Profile): Idea[] {
   });
   if (vacant) out.push({
     id: "leerstandAktivieren",
-    de: { title: "Leerstand aktivieren", text: "Eigentümer leerer Wohnungen gezielt ansprechen, Sanierungsberatung anbieten und Mietgarantien über die Stadt (z. B. „Sozialagentur Wohnen") vermitteln." },
+    de: { title: "Leerstand aktivieren", text: "Eigentümer leerer Wohnungen gezielt ansprechen, Sanierungsberatung anbieten und Mietgarantien über die Stadt (z. B. „Sozialagentur Wohnen“) vermitteln." },
     en: { title: "Bring empty flats back", text: "Contact owners of empty flats directly, offer renovation advice and city-backed rent guarantees (social letting agency)." },
   });
   if (vacant && below(p.versorgung, ref.versorgung)) out.push({
