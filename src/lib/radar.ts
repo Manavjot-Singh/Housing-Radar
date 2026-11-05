@@ -3,6 +3,7 @@ import gitter from "@/data/gitter.json";
 import gewerbe from "@/data/gewerbe.json";
 import stadtteile from "@/data/stadtteile.json";
 import summary from "@/data/summary.json";
+import versorgung from "@/data/versorgung.json";
 import type { FeatureCollection, Geometry } from "geojson";
 
 export type District = {
@@ -32,15 +33,20 @@ export type Indicator = "wohnflaecheProKopf" | "leerstandsquote" | "anteil65" | 
 
 type DistrictProps = Omit<District, "einwohnerJeGebaeude" | "gewerbeLeerstand">;
 
-export const geo = stadtteile as unknown as FeatureCollection<Geometry, DistrictProps>;
+export let geo = stadtteile as unknown as FeatureCollection<Geometry, DistrictProps>;
+/** Name of the town currently shown (Lüneburg by default, or a town loaded on the "Andere Gemeinde" page). */
+export let cityName = "Lüneburg";
+/** Lüneburg-only data sets: the LeAn shop vacancy list and the land-use plan. */
+export let hasGewerbe = true;
+export let hasFnp = true;
 
 // ============= Commercial vacancy (LeAn extract) =============
 /** Street: [name, lon, lat, objects, vacant, at risk, reuse agreed] – built by scripts/prepare_gewerbe.py. */
 export type CommercialStreet = [string, number, number, number, number, number, number];
-export const commercial = gewerbe as unknown as CommercialStreet[];
+export let commercial = gewerbe as unknown as CommercialStreet[];
 /** The LeAn extract only covers Altstadt shopping streets; elsewhere commercial vacancy is unknown, not zero. */
 export const COMMERCIAL_DISTRICT = "Altstadt";
-const commercialTotal = commercial.reduce((s, x) => s + x[4] + x[5], 0);
+let commercialTotal = commercial.reduce((s, x) => s + x[4] + x[5], 0);
 
 function metres(lon1: number, lat1: number, lon2: number, lat2: number) {
   const dx = (lon1 - lon2) * 66600, dy = (lat1 - lat2) * 111200;
@@ -57,21 +63,24 @@ export function commercialNear(lon: number, lat: number, radius: number, covered
   return near ? n : null;
 }
 
-export const districts: District[] = geo.features.map((f) => ({
-  ...f.properties,
-  einwohnerJeGebaeude: f.properties.gebaeude > 0 ? f.properties.einwohner / f.properties.gebaeude : 0,
-  gewerbeLeerstand: f.properties.name === COMMERCIAL_DISTRICT ? commercialTotal : null,
-}));
+function toDistricts(): District[] {
+  return geo.features.map((f) => ({
+    ...f.properties,
+    einwohnerJeGebaeude: f.properties.gebaeude > 0 ? f.properties.einwohner / f.properties.gebaeude : 0,
+    gewerbeLeerstand: hasGewerbe && f.properties.name === COMMERCIAL_DISTRICT ? commercialTotal : null,
+  }));
+}
+export let districts: District[] = toDistricts();
 
-export const districtByName = new Map(districts.map((d) => [d.name, d]));
+export let districtByName = new Map(districts.map((d) => [d.name, d]));
 
 let loc = "de-DE";
 /** Switches number formatting between German and English. */
 export function setNumberLocale(l: "de" | "en") { loc = l === "en" ? "en-GB" : "de-DE"; }
 export function fmtInt(x: number) { return x.toLocaleString(loc); }
 
-export const cityAvg = summary.stadtWohnflaecheProKopf;
-export const cityPopulation = summary.einwohner;
+export let cityAvg = summary.stadtWohnflaecheProKopf;
+export let cityPopulation = summary.einwohner;
 
 export const indicators: Record<
   Indicator,
@@ -172,13 +181,14 @@ export function cellValue(c: Cell, ind: Indicator): number | null {
 // The 100 m census squares are ~4 pixels wide in the city overview, so the map groups them
 // into ~500 m blocks (5 x 5 cells) that never cross a district border. scripts/prepare_blocks.py
 // builds them from gitter.json; the tile grid below must stay identical to that script.
-export const BLOCK_LON0 = 10.30, BLOCK_LAT0 = 53.10, BLOCK_DLON = 0.0075, BLOCK_DLAT = 0.0045;
+export let BLOCK_LON0 = 10.30, BLOCK_LAT0 = 53.10;
+export const BLOCK_DLON = 0.0075, BLOCK_DLAT = 0.0045;
 
 /** Block: [key, residents, living m²/person, vacancy %, 65+ %, 1–2-dwelling %, rooms/person, amenities, cells, vacancy coverage %, district]. */
 export type Block = [string, number, number | null, number | null, number | null, number | null, number | null, number, number, number, string];
 
-export const blocks = blocke as unknown as Block[];
-const blockByKey = new Map(blocks.map((b) => [b[0], b]));
+export let blocks = blocke as unknown as Block[];
+let blockByKey = new Map(blocks.map((b) => [b[0], b]));
 
 /** The block a cell belongs to, or null if the tile has no block (should not happen). */
 export function blockOf(c: Cell): Block | null {
@@ -218,7 +228,8 @@ export type AmenityKey = "shop" | "doc" | "pt" | "bakery";
 export const AMENITY_BIT: Record<AmenityKey, number> = { shop: 1, doc: 2, pt: 4, bakery: 8 };
 const ALL_AMENITIES = 15;
 let amenityMask = ALL_AMENITIES;
-const gridCells = gitter as unknown as Cell[];
+export let gridCells = gitter as unknown as Cell[];
+export let amenityPoints = versorgung as Record<AmenityKey, [number, number][]>;
 const blockAmenity = new Map<string, number>();
 const bits = (m: number) => { let n = 0; for (; m; m &= m - 1) n++; return n; };
 
@@ -327,15 +338,15 @@ export function verdict(d: District, lang: "de" | "en" = "de"): string {
   if (lang === "en") {
     if (d.wohnflaecheProKopf == null) return "Not enough data.";
     const a = d.abweichung ?? 0;
-    if (a >= 10) return `Comparatively few people live on a lot of space here: ${a.toFixed(0)} % more per person than the Lüneburg average. A starting point for advice on home swaps, conversions or granny flats.`;
+    if (a >= 10) return `Comparatively few people live on a lot of space here: ${a.toFixed(0)} % more per person than the ${cityName} average. A starting point for advice on home swaps, conversions or granny flats.`;
     if (a <= -7) return `Living space is scarce here: ${Math.abs(a).toFixed(0)} % less space per person than average. New housing or densification nearby would relieve pressure.`;
-    return "Living space per person is close to the Lüneburg average.";
+    return `Living space per person is close to the ${cityName} average.`;
   }
   if (d.wohnflaecheProKopf == null) return "Keine ausreichenden Daten.";
   const a = d.abweichung ?? 0;
-  if (a >= 10) return `Hier leben vergleichsweise wenige Menschen auf viel Wohnfläche: ${a.toFixed(0)} % mehr pro Kopf als im Lüneburger Schnitt. Ansatzpunkt für Beratung zu Wohnungstausch, Umbau oder Einliegerwohnungen.`;
+  if (a >= 10) return `Hier leben vergleichsweise wenige Menschen auf viel Wohnfläche: ${a.toFixed(0)} % mehr pro Kopf als im Schnitt von ${cityName}. Ansatzpunkt für Beratung zu Wohnungstausch, Umbau oder Einliegerwohnungen.`;
   if (a <= -7) return `Hier ist Wohnraum knapp: ${Math.abs(a).toFixed(0)} % weniger Fläche pro Kopf als im Schnitt. Neubau oder Verdichtung in der Umgebung würde hier entlasten.`;
-  return "Die Wohnfläche pro Kopf liegt nahe am Lüneburger Durchschnitt.";
+  return `Die Wohnfläche pro Kopf liegt nahe am Durchschnitt von ${cityName}.`;
 }
 
 export type Source = { en: { name: string; content: string; level: string; status: string }; name: string; publisher: string; content: string; level: string; licence: string; status: string; url: string };
@@ -359,3 +370,27 @@ export const sources: Source[] = [
 ];
 
 setAmenitySelection({});
+
+export type CityInput = {
+  name: string; hasGewerbe: boolean; hasFnp: boolean; blockOrigin: [number, number];
+  stadtteile: unknown; summary: { stadtWohnflaecheProKopf: number; einwohner: number }; gitter: unknown; blocke: unknown; versorgung: unknown;
+};
+const LUENEBURG: CityInput = { name: "Lüneburg", hasGewerbe: true, hasFnp: true, blockOrigin: [10.30, 53.10], stadtteile, summary, gitter, blocke, versorgung };
+
+/** Swaps every data set the dashboard reads; null restores Lüneburg. Importers see the new values (live bindings). */
+export function loadCity(c: CityInput | null) {
+  const x = c ?? LUENEBURG;
+  cityName = x.name; hasGewerbe = x.hasGewerbe; hasFnp = x.hasFnp;
+  geo = x.stadtteile as FeatureCollection<Geometry, DistrictProps>;
+  commercial = x.hasGewerbe ? (gewerbe as unknown as CommercialStreet[]) : [];
+  commercialTotal = commercial.reduce((s, y) => s + y[4] + y[5], 0);
+  districts = toDistricts();
+  districtByName = new Map(districts.map((d) => [d.name, d]));
+  cityAvg = x.summary.stadtWohnflaecheProKopf; cityPopulation = x.summary.einwohner;
+  [BLOCK_LON0, BLOCK_LAT0] = x.blockOrigin;
+  blocks = x.blocke as Block[];
+  blockByKey = new Map(blocks.map((b) => [b[0], b]));
+  gridCells = x.gitter as Cell[];
+  amenityPoints = x.versorgung as Record<AmenityKey, [number, number][]>;
+  setAmenitySelection({});
+}
