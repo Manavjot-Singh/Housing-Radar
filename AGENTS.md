@@ -28,3 +28,5 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Housing data is precomputed offline by scripts/prepare_data.py (Zensus 2022 100m grid + OSM districts) into src/data/*.json; the app reads static JSON so the demo needs no backend.
