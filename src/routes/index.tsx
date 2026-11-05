@@ -9,6 +9,7 @@ import { recommend, type Profile } from "@/lib/recommendations";
 import {
   analyses, thresholdText, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
   type Condition, type Dir, type Indicator,
+  setAmenitySelection,
 } from "@/lib/radar";
 
 export const Route = createFileRoute("/")({
@@ -37,12 +38,12 @@ const toProfile = (d: (typeof districts)[number]): Profile => ({
   wohnflaecheProKopf: d.wohnflaecheProKopf, leerstandsquote: d.leerstandsquote, anteilAelter: d.anteil65, efhAnteil: d.efhAnteil,
   raeumeProKopf: d.raeumeProKopf, versorgung: d.versorgung, gewerbeLeerstand: d.gewerbeLeerstand, einwohnerJeGebaeude: d.einwohnerJeGebaeude,
 });
-const cityRef: Profile = {
+const cityRefOf = (): Profile => ({
   wohnflaecheProKopf: weighted("wohnflaecheProKopf"), leerstandsquote: weighted("leerstandsquote"), efhAnteil: weighted("efhAnteil"),
   raeumeProKopf: weighted("raeumeProKopf"), versorgung: weighted("versorgung"), anteilAelter: (() => {
     let s = 0, w = 0; for (const d of districts) if (d.anteil65 != null) { s += d.anteil65 * d.einwohner; w += d.einwohner; } return w ? s / w : null;
   })(),
-};
+});
 
 const defaultDir: Record<Indicator, Dir> = {
   wohnflaecheProKopf: "high", leerstandsquote: "high", anteil65: "high", efhAnteil: "high",
@@ -81,7 +82,7 @@ function Index() {
     const a = analyses.find((x) => x.id === id)!;
     setAnalysisId(id);
     setConditions(a.conditions);
-    if (a.conditions.some((c) => c.ind === "versorgung")) setAmenities({ shop: true, doc: true, pt: false, bakery: true });
+    if (a.conditions.some((c) => c.ind === "versorgung")) setAmenities({ shop: true, doc: true, pt: true, bakery: true });
   }
 
   function clear() {
@@ -89,6 +90,8 @@ function Index() {
     setConditions([]);
   }
 
+  setAmenitySelection(amenities); // re-score before render so map, card and ranking agree
+  const cityRef = cityRefOf();
   const sel = districts.find((d) => d.name === selected);
   const sorted = single ? [...districts].sort((a, b) => (value(b, single) ?? -1) - (value(a, single) ?? -1)) : [];
   const max = single ? Math.max(...districts.map((d) => value(d, single) ?? 0)) : 1;
@@ -244,7 +247,7 @@ function Index() {
                   <div><dt className="text-muted-foreground">{tx.old}<MetricInfo k="old" lang={lang} label={tx.old} /></dt><dd className="font-display text-2xl font-semibold">{sel.anteil65 != null ? `${fmtAuto(sel.anteil65)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.efh}<MetricInfo k="efh" lang={lang} label={tx.efh} /></dt><dd className="font-display text-2xl font-semibold">{sel.efhAnteil != null ? `${Math.round(sel.efhAnteil)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.rooms}<MetricInfo k="rooms" lang={lang} label={tx.rooms} /></dt><dd className="font-display text-2xl font-semibold">{sel.raeumeProKopf != null ? fmt1(sel.raeumeProKopf) : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${fmt1(sel.versorgung)} / 4` : tx.noData}</dd></div>
+                  <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${Math.round(sel.versorgung)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.density}<MetricInfo k="density" lang={lang} label={tx.density} /></dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>
                   <div><dt className="text-muted-foreground">{tx.coverage}<MetricInfo k="coverage" lang={lang} label={tx.coverage} /></dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>

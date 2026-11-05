@@ -24,8 +24,8 @@ export const METRIC_INFO: Record<MetricKey, { de: string; en: string }> = {
     en: "Census 2022, dwellings by number of rooms: total rooms (1 to 7+) ÷ residents. Values above 6 are treated as outliers and dropped.",
   },
   amen: {
-    de: "OpenStreetMap: für jedes Quadrat wird gezählt, ob ein Supermarkt (≤ 600 m), eine Bäckerei (≤ 600 m), eine Arztpraxis (≤ 600 m) und eine Bus-/Bahnhaltestelle (≤ 400 m Luftlinie) erreichbar ist – 0 bis 4 Punkte, nach Einwohnern gemittelt.",
-    en: "OpenStreetMap: each square scores one point each for a supermarket (≤ 600 m), a bakery (≤ 600 m), a doctor (≤ 600 m) and a bus/rail stop (≤ 400 m, straight line) – 0 to 4 points, resident-weighted mean.",
+    de: "OpenStreetMap: für jedes Quadrat wird geprüft, ob ein Supermarkt (≤ 600 m), eine Bäckerei (≤ 600 m), eine Arztpraxis (≤ 600 m) und eine Bus-/Bahnhaltestelle (≤ 400 m Luftlinie) erreichbar ist Gezählt werden nur die oben angehakten Angebote (nichts angehakt = alle vier); der Wert ist der Anteil davon in Gehweite in %, nach Einwohnern gemittelt.",
+    en: "OpenStreetMap: each square is checked for a supermarket (≤ 600 m), a bakery (≤ 600 m), a doctor (≤ 600 m) and a bus/rail stop (≤ 400 m, straight line) Only the amenities ticked above count (none ticked = all four); the value is the share of them within walking distance in %, resident-weighted.",
   },
   density: {
     de: "LGLN ALKIS-Hausumringe: Grundfläche aller Gebäude im Stadtteil ÷ Fläche des Stadtteils × 100.",
