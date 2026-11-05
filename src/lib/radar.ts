@@ -143,6 +143,15 @@ export function meets(v: number | null, cond: Condition): boolean | null {
   return cond.dir === "high" ? v >= b[2]! : v < b[1]!;
 }
 
+/** Threshold as text, e.g. "≥ 14 %" for high or "< 1,5 / 3" for low. */
+export function thresholdText(cond: Condition, en = false): string {
+  const i = indicators[cond.ind];
+  const u = en && i.unit === "Pers." ? "ppl" : i.unit;
+  const x = cond.dir === "high" ? i.breaks[2]! : i.breaks[1]!;
+  if (cond.ind === "versorgung") return cond.dir === "high" ? (en ? "all 3 nearby" : "alle 3 in der Nähe") : (en ? "0–1 of 3 nearby" : "0–1 von 3 in der Nähe");
+  return `${cond.dir === "high" ? "≥" : "<"} ${fmtNum(x)}${u ? " " + u : ""}`;
+}
+
 export type Analysis = {
   id: string; conditions: Condition[];
   de: { title: string; question: string; action: string };
