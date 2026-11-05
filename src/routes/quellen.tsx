@@ -19,7 +19,7 @@ export const Route = createFileRoute("/quellen")({
 const steps = [
   ["Laden", "Zensus-2022-Tabellen im 100-m-Gitter (Einwohner, Wohnfläche je Bewohner, Leerstandsquote), die Stadtteilgrenzen aus OpenStreetMap und die amtlichen ALKIS-Gebäudegrundrisse des LGLN."],
   ["Zusammenführen", "Jede Gitterzelle wird über ihren Mittelpunkt genau einem Stadtteil zugeordnet (EPSG:3035). Jedes Gebäude wird über seinen Schwerpunkt einem Stadtteil zugerechnet (EPSG:25832)."],
-  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Bebauungsdichte = Summe der Gebäudegrundflächen geteilt durch die Stadtteilfläche."],
+  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Bebauungsdichte = Summe der Gebäudegrundflächen geteilt durch die Stadtteilfläche. Einwohner je Gebäude = Zensus-Bevölkerung dividiert durch die Zahl der ALKIS-Gebäude im Stadtteil."],
   ["Datenschutz", "Es werden nur bereits amtlich geheimgehaltene Zensusdaten genutzt. Ergebnisse erscheinen nur auf Stadtteil- bzw. 100-m-Ebene, nie für Personen oder Haushalte."],
 ];
 
@@ -32,6 +32,8 @@ const limits = [
   "Zellen an Stadtteilgrenzen werden vollständig dem Stadtteil ihres Mittelpunkts zugerechnet.",
   "Die Stadtteilgrenzen aus OpenStreetMap sind keine amtlichen Grenzen; sie sollten mit Lüne-GIS abgeglichen werden.",
   "Die Bebauungsdichte zählt nur die Grundfläche der Gebäude, nicht die Geschosse – sie ist ein erster Anhaltspunkt für Nachverdichtung, kein Ersatz für ein Baulückenkataster. Garagen und Nebengebäude sind enthalten.",
+  "Die Zahl „Einwohner je Gebäude“ zählt alle amtlich erfassten Gebäude, also auch Garagen, Schuppen und Betriebsgebäude. Der tatsächliche Besatz je Wohngebäude ist deshalb höher; die Kennzahl ist ein Vergleichswert zwischen Stadtteilen, keine absolute Größe.",
+  "Einwohner- und Gebäudezahlen stammen aus verschiedenen Erhebungen mit unterschiedlichen Stichtagen (Zensus Mai 2022, ALKIS September 2026).",
 ];
 
 function Quellen() {

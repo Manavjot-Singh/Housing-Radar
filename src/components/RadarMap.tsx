@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import type * as L from "leaflet";
 import gitter from "@/data/gitter.json";
-import { geo, scaleClass, type District, type Indicator } from "@/lib/radar";
+import { districtByName, geo, indicators, scaleClass, value, type District, type Indicator } from "@/lib/radar";
 
 type Props = {
   indicator: Indicator;
@@ -67,7 +67,7 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
     const fg = cssVar("--foreground");
     const primary = cssVar("--primary");
 
-    if (showGrid) {
+    if (showGrid && indicators[indicator].gridSource) {
       const grp = Lf.layerGroup();
       for (const c of gitter as Cell[]) {
         const v = indicator === "wohnflaecheProKopf" ? c[3] : indicator === "leerstandsquote" ? c[4] : null;
@@ -83,12 +83,13 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
     districtLayer.current = Lf.geoJSON(geo, {
       style: (f) => {
         const p = f!.properties as District;
+        const d = districtByName.get(p.name) ?? p;
         const isSel = p.name === selected;
         return {
           color: isSel ? primary : fg,
           weight: isSel ? 3.5 : 1,
           opacity: isSel ? 1 : 0.6,
-          fillColor: color(scaleClass(p[indicator], indicator)),
+          fillColor: color(scaleClass(value(d, indicator), indicator)),
           fillOpacity: showGrid ? 0 : 0.8,
         };
       },
