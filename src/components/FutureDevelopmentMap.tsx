@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
+import { CENTRE, evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
 
 const EXCL_LABEL: Record<ExclKey, { de: string; en: string }> = {
   nsg: { de: "Naturschutzgebiet", en: "Nature reserve" },
@@ -75,7 +75,16 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
       layerRef.current = L.geoJSON(fc as never).addTo(map);
       const rfc = { type: "FeatureCollection", features: futureBlocks.flatMap((b) => (b.rg ? [{ type: "Feature", geometry: b.rg, properties: {} }] : [])) };
       L.geoJSON(rfc as never, { interactive: false, style: { color: "#1d4ed8", weight: 1.5, dashArray: "4 3", fillColor: "#3b82f6", fillOpacity: 0.45 } }).addTo(map);
-      map.fitBounds(layerRef.current.getBounds(), { padding: [10, 10] });
+      const bb = layerRef.current.getBounds();
+      const qs = { dashArray: "8 6", color: "#7f1d1d", weight: 2, interactive: false };
+      L.polyline([[bb.getSouth() - 0.01, CENTRE.lon], [bb.getNorth() + 0.01, CENTRE.lon]], qs).addTo(map);
+      L.polyline([[CENTRE.lat, bb.getWest() - 0.01], [CENTRE.lat, bb.getEast() + 0.01]], qs).addTo(map);
+      const m = map;
+      const lbl = (lat: number, lon: number, txt: string) => L.marker([lat, lon], { interactive: false, icon: L.divIcon({ className: "", html: `<span style="font:700 14px sans-serif;color:#7f1d1d;background:rgba(255,255,255,.85);padding:2px 6px;border-radius:4px">${txt}</span>` }) }).addTo(m);
+      const dy = (bb.getNorth() - CENTRE.lat) * 0.8, dx = (bb.getEast() - CENTRE.lon) * 0.8;
+      lbl(CENTRE.lat + dy, CENTRE.lon - dx, en ? "NW" : "NW"); lbl(CENTRE.lat + dy, CENTRE.lon + dx * 0.9, en ? "NE" : "NO");
+      lbl(CENTRE.lat - dy, CENTRE.lon - dx, en ? "SW" : "SW"); lbl(CENTRE.lat - dy, CENTRE.lon + dx * 0.9, en ? "SE" : "SO");
+      map.fitBounds(bb, { padding: [10, 10] });
       restyle();
     });
     return () => { cancelled = true; map?.remove(); layerRef.current = null; };
