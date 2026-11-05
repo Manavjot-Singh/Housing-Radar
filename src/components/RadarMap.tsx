@@ -42,6 +42,7 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
         opacity: 0.45,
       }).addTo(map);
       mapRef.current = map;
+      map.on("zoomend", () => render());
       render();
       map.fitBounds(districtLayer.current!.getBounds(), { padding: [10, 10] });
     });
@@ -67,14 +68,22 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
     const fg = cssVar("--foreground");
     const primary = cssVar("--primary");
 
-    if (showGrid && indicators[indicator].gridSource) {
+    const detail = (showGrid || map.getZoom() >= 15) && indicators[indicator].gridSource;
+    if (detail) {
       const grp = Lf.layerGroup();
+      const renderer = Lf.canvas();
       for (const c of gitter as Cell[]) {
         const v = indicator === "wohnflaecheProKopf" ? c[3] : indicator === "leerstandsquote" ? c[4] : null;
         const dLat = 0.00045, dLon = 0.00075;
         Lf.rectangle([[c[1] - dLat, c[0] - dLon], [c[1] + dLat, c[0] + dLon]], {
-          stroke: false, fillColor: color(scaleClass(v, indicator)), fillOpacity: 0.85, interactive: false,
-        }).addTo(grp);
+          stroke: false, fillColor: color(scaleClass(v, indicator)), fillOpacity: 0.85, renderer,
+        })
+          .bindTooltip(
+            `<b>100-m-Quadrat · ${c[5]}</b><br>Einwohner: ${c[2] ?? "–"}<br>Wohnfläche/Kopf: ${c[3] != null ? c[3].toFixed(1).replace(".", ",") + " m²" : "–"}<br>Leerstand: ${c[4] != null ? c[4].toFixed(1).replace(".", ",") + " %" : "keine Angabe"}`,
+            { sticky: true },
+          )
+          .on("click", () => onSelectRef.current(c[5]))
+          .addTo(grp);
       }
       grp.addTo(map);
       gridLayer.current = grp;
@@ -90,15 +99,16 @@ export function RadarMap({ indicator, showGrid, selected, onSelect }: Props) {
           weight: isSel ? 3.5 : 1,
           opacity: isSel ? 1 : 0.6,
           fillColor: color(scaleClass(value(d, indicator), indicator)),
-          fillOpacity: showGrid ? 0 : 0.8,
+          fillOpacity: detail ? 0 : 0.8,
         };
       },
       onEachFeature: (f, layer) => {
         const p = f.properties as District;
-        layer.bindTooltip(p.name, { sticky: true });
+        if (!detail) layer.bindTooltip(p.name, { sticky: true });
         layer.on("click", () => onSelectRef.current(p.name));
       },
     }).addTo(map);
+    if (detail) districtLayer.current.bringToBack();
   }
 
   return <div ref={el} className="h-full w-full" aria-label="Karte der Lüneburger Stadtteile" />;
