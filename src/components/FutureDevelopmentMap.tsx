@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { CENTRE, evaluate, futureBlocks, quadrantOf, type Quadrant, type Check, type ExclKey, type Thresholds } from "@/lib/future";
+import { evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
 
 const EXCL_LABEL: Record<ExclKey, { de: string; en: string }> = {
   nsg: { de: "Naturschutzgebiet", en: "Nature reserve" },
@@ -23,7 +23,7 @@ function line(c: Check, label: string, unit: string, cond: string, en: boolean) 
   return `${mark} ${label}: ${num(c.value, en)} ${unit} <span style="opacity:.7">(${cond})</span>${note}`;
 }
 
-export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t: Thresholds; focus: Quadrant | null }) {
+export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t: Thresholds; focus: Set<string> }) {
   const el = useRef<HTMLDivElement>(null);
   const layerRef = useRef<import("leaflet").GeoJSON | null>(null);
   const tRef = useRef(t);
@@ -41,16 +41,16 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
       const blk = futureBlocks[b.idx];
       if (!blk) return;
       const e = evaluate(blk, th);
-      const inFocus = fRef.current != null && quadrantOf(blk) === fRef.current;
+      const inFocus = fRef.current.has(blk.id);
       const path = l as import("leaflet").Path;
       path.setStyle(e.pass
         ? inFocus
           ? { color: "#b91c1c", weight: 3, fillColor: "#16a34a", fillOpacity: 0.75 }
           : { color: "#14532d", weight: 1.5, fillColor: "#22c55e", fillOpacity: 0.4 }
         : inFocus
-          ? { color: "#b91c1c", weight: 1, fillColor: "#fca5a5", fillOpacity: 0.18 }
+          ? { color: "#b91c1c", weight: 2.5, fillColor: "#fca5a5", fillOpacity: 0.35 }
           : { color: "#64748b", weight: 0.5, fillColor: "#94a3b8", fillOpacity: 0.08 });
-      if (inFocus && e.pass) path.bringToFront();
+      if (inFocus) path.bringToFront();
       const excl = Object.entries(blk.excl).map(([k, v]) => `${EXCL_LABEL[k as ExclKey][lang]} ${v} %`).join(", ");
       const html = [
         `<b>${blk.d}</b> · ${e.pass ? (en ? "matches all conditions" : "erfüllt alle Bedingungen") : (en ? "does not match" : "erfüllt nicht alle")}`,
@@ -85,14 +85,6 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
       const rfc = { type: "FeatureCollection", features: futureBlocks.flatMap((b) => (b.rg ? [{ type: "Feature", geometry: b.rg, properties: {} }] : [])) };
       L.geoJSON(rfc as never, { interactive: false, style: { color: "#1d4ed8", weight: 1.5, dashArray: "4 3", fillColor: "#3b82f6", fillOpacity: 0.45 } }).addTo(map);
       const bb = layerRef.current.getBounds();
-      const qs = { dashArray: "8 6", color: "#7f1d1d", weight: 2, interactive: false };
-      L.polyline([[bb.getSouth() - 0.01, CENTRE.lon], [bb.getNorth() + 0.01, CENTRE.lon]], qs).addTo(map);
-      L.polyline([[CENTRE.lat, bb.getWest() - 0.01], [CENTRE.lat, bb.getEast() + 0.01]], qs).addTo(map);
-      const m = map;
-      const lbl = (lat: number, lon: number, txt: string) => L.marker([lat, lon], { interactive: false, icon: L.divIcon({ className: "", html: `<span style="font:700 14px sans-serif;color:#7f1d1d;background:rgba(255,255,255,.85);padding:2px 6px;border-radius:4px">${txt}</span>` }) }).addTo(m);
-      const dy = (bb.getNorth() - CENTRE.lat) * 0.8, dx = (bb.getEast() - CENTRE.lon) * 0.8;
-      lbl(CENTRE.lat + dy, CENTRE.lon - dx, en ? "NW" : "NW"); lbl(CENTRE.lat + dy, CENTRE.lon + dx * 0.9, en ? "NE" : "NO");
-      lbl(CENTRE.lat - dy, CENTRE.lon - dx, en ? "SW" : "SW"); lbl(CENTRE.lat - dy, CENTRE.lon + dx * 0.9, en ? "SE" : "SO");
       map.fitBounds(bb, { padding: [10, 10] });
       restyle();
     });
