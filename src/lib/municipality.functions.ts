@@ -36,7 +36,7 @@ export const loadMunicipality = createServerFn({ method: "POST" })
     // 2. Nature reserves + landscape protection (NLWKN) and 3. ALKIS buildings (LGLN), in parallel
     const nsgP = protectedAreas("SchutzgebieteNI:ProtectedSites_IUCN_HabitatSpeciesManagementArea_Surface", bb, () => true);
     const lsgP = protectedAreas("SchutzgebieteNI:ProtectedSites_IUCN_ProtectedLandscapeOrSeascape_Surface", bb,
-      (p) => p.d_3_designation === "LSG" || String(p.inspireid_localid ?? "").includes("LSG") || String(p.sitename_name_1 ?? "").includes("Landschaftsschutz"));
+      (p) => p["d_3_designation"] === "LSG" || String(p["inspireid_localid"] ?? "").includes("LSG") || String(p["sitename_name_1"] ?? "").includes("Landschaftsschutz"));
 
     const buildings: Building[] = [];
     let truncated = false;

@@ -55,7 +55,7 @@ export function polyBBox(polys: Poly[]): BBox {
 function inRing(x: number, y: number, r: Ring) {
   let inside = false;
   for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
-    const [xi, yi] = r[i], [xj, yj] = r[j];
+    const [xi, yi] = r[i]!, [xj, yj] = r[j]!;
     if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
@@ -63,7 +63,7 @@ function inRing(x: number, y: number, r: Ring) {
 
 export function inPoly(x: number, y: number, p: Poly) {
   if (!p[0] || !inRing(x, y, p[0])) return false;
-  for (let k = 1; k < p.length; k++) if (inRing(x, y, p[k])) return false;
+  for (let k = 1; k < p.length; k++) if (inRing(x, y, p[k]!)) return false;
   return true;
 }
 
@@ -76,15 +76,15 @@ export function makeTester(polys: Poly[]) {
 /** Planar area in m² of a lon/lat ring (local equirectangular approximation). */
 export function ringAreaM2(r: Ring) {
   if (r.length < 3) return 0;
-  const lat0 = r[0][1];
+  const lat0 = r[0]![1];
   const kx = mPerDegLon(lat0), ky = M_PER_DEG_LAT;
   let a = 0;
-  for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] * kx) * (r[i][1] * ky) - (r[i][0] * kx) * (r[j][1] * ky);
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const pi = r[i]!, pj = r[j]!; a += (pj[0] * kx) * (pi[1] * ky) - (pi[0] * kx) * (pj[1] * ky); }
   return Math.abs(a) / 2;
 }
 
 export function polyAreaM2(p: Poly) {
-  return Math.max(0, ringAreaM2(p[0]) - p.slice(1).reduce((s, h) => s + ringAreaM2(h), 0));
+  return Math.max(0, ringAreaM2(p[0] ?? []) - p.slice(1).reduce((s, h) => s + ringAreaM2(h), 0));
 }
 
 export function centroid(r: Ring): [number, number] {
@@ -98,12 +98,12 @@ export function parseAlkisGml(xml: string): { ring: Ring; ags: string }[] {
   const out: { ring: Ring; ags: string }[] = [];
   const members = xml.split("<wfs:member>");
   for (let i = 1; i < members.length; i++) {
-    const m = members[i];
+    const m = members[i]!;
     const pos = /<gml:posList>([^<]+)<\/gml:posList>/.exec(m);
     if (!pos) continue;
-    const nums = pos[1].trim().split(/\s+/).map(Number);
+    const nums = pos[1]!.trim().split(/\s+/).map(Number);
     const ring: Ring = [];
-    for (let k = 0; k + 1 < nums.length; k += 2) ring.push([nums[k + 1], nums[k]]);
+    for (let k = 0; k + 1 < nums.length; k += 2) ring.push([nums[k + 1]!, nums[k]!]);
     const ags = /<gmdschl>([^<]+)<\/gmdschl>/.exec(m)?.[1] ?? "";
     out.push({ ring, ags });
   }
@@ -116,7 +116,7 @@ export function simplify(polys: Poly[], maxPts = 150): Poly[] {
     if (r.length <= maxPts) return r;
     const step = Math.ceil(r.length / maxPts);
     const t = r.filter((_, i) => i % step === 0);
-    t.push(r[r.length - 1]);
+    t.push(r[r.length - 1]!);
     return t;
   }));
 }

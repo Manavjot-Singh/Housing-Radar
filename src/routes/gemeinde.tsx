@@ -42,7 +42,7 @@ function Gemeinde() {
     e.preventDefault();
     if (!q.trim()) return;
     setBusy("search"); setErr(null); setPick(null); setData(null);
-    try { const h = await search({ data: { q: q.trim() } }); setHits(h); if (h.length === 1) setPick(h[0]); }
+    try { const h = await search({ data: { q: q.trim() } }); setHits(h); if (h.length === 1) setPick(h[0]!); }
     catch { setErr(en ? "Search failed. Please try again." : "Suche fehlgeschlagen. Bitte erneut versuchen."); }
     finally { setBusy(null); }
   };

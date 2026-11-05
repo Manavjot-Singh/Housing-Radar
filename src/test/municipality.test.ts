@@ -6,7 +6,7 @@ const square = (w: number, s: number, d: number): Poly => [[[w, s], [w + d, s], 
 describe("municipality analysis", () => {
   it("reads ALKIS GML in lat-lon order and keeps the municipality key", () => {
     const xml = `<wfs:member><gml:posList>53.1 10.2 53.1 10.3 53.2 10.3 53.1 10.2</gml:posList><gmdschl>03355022</gmdschl></wfs:member>`;
-    const [b] = parseAlkisGml(xml);
+    const b = parseAlkisGml(xml)[0]!;
     expect(b.ags).toBe("03355022");
     expect(b.ring[0]).toEqual([10.2, 53.1]);
   });
