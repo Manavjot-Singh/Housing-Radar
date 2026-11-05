@@ -9,7 +9,10 @@ Exclusions (all clipped to the city):
 - Naturschutzgebiete (NSG), already in src/data/naturschutzgebiete.json (NLWKN)
 - Landschaftsschutzgebiete (LSG), NLWKN protected-sites WFS (DL-DE BY 2.0)
 - Überschwemmungsgebiete, festgesetzt + vorläufig gesichert, NLWKN (DL-DE BY 2.0)
-- Wald and Friedhöfe, OpenStreetMap (ODbL)
+- Wald, Friedhöfe, Kleingärten, Parkplätze, Parks/Sportflächen, OpenStreetMap (ODbL)
+Farmland is NOT excluded (classic site for new housing), only reported as a share.
+Planned building land: FNP Lüneburg (Zusammenzeichnung, PlanDigital WFS) Wohn- and
+gemischte Bauflächen; "reserve" = that land still unbuilt per OSM land use.
 Building coverage uses OpenStreetMap building footprints (ODbL).
 Writes src/data/zukunft-bloecke.json.
 """
@@ -70,16 +73,22 @@ for lid in (39, 40):
 flood = clip(flood)
 
 # --- OSM forest, cemeteries, buildings
-ovq = f"""[out:json][timeout:180];
-(way["landuse"~"^(forest|cemetery)$"]({miny},{minx},{maxy},{maxx});
- relation["landuse"~"^(forest|cemetery)$"]({miny},{minx},{maxy},{maxx});
+B = f"({miny},{minx},{maxy},{maxx})"
+ovq = f"""[out:json][timeout:240];
+(way["landuse"~"^(forest|cemetery|allotments|farmland|meadow|grass|greenfield|construction|brownfield|orchard)$"]{B};
+ relation["landuse"~"^(forest|cemetery|allotments|farmland|meadow|grass|greenfield|construction|brownfield|orchard)$"]{B};
+ way["amenity"="parking"]["parking"!~"^(underground|multi-storey)$"]{B};
+ relation["amenity"="parking"]{B};
+ way["leisure"~"^(park|pitch|sports_centre|stadium|golf_course|playground)$"]{B};
+ relation["leisure"~"^(park|pitch|sports_centre|stadium|golf_course)$"]{B};
  way["natural"="wood"]({miny},{minx},{maxy},{maxx});
  relation["natural"="wood"]({miny},{minx},{maxy},{maxx});
  way["amenity"="grave_yard"]({miny},{minx},{maxy},{maxx});
  way["building"]({miny},{minx},{maxy},{maxx}););
 out geom;"""
 osm = None
-for ep in ("https://overpass-api.de/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"):
+for ep in ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
+           "https://maps.mail.ru/osm/tools/overpass/api/interpreter"] * 2:
     try:
         osm = get(ep, data=urlencode({"data": ovq}).encode(), timeout=300)
         break
@@ -93,6 +102,7 @@ def ring(geom):
 
 
 forest, cemetery, buildings = [], [], []
+allot, parking, green, farm, unbuilt = [], [], [], [], []
 for el in osm["elements"]:
     t = el.get("tags", {})
     polys = []
@@ -114,13 +124,53 @@ for el in osm["elements"]:
             buildings.append(g)
         elif t.get("landuse") == "cemetery" or t.get("amenity") == "grave_yard":
             cemetery.append(g)
-        else:
+        elif t.get("landuse") == "allotments":
+            allot.append(g)
+        elif t.get("amenity") == "parking":
+            parking.append(g)
+        elif t.get("leisure"):
+            green.append(g)
+        elif t.get("landuse") in ("forest",) or t.get("natural") == "wood":
             forest.append(g)
+        else:
+            unbuilt.append(g)
+            if t.get("landuse") == "farmland":
+                farm.append(g)
 forest, cemetery = clip(forest), clip(cemetery)
+allot, parking, green, farm, unbuilt = clip(allot), clip(parking), clip(green), clip(farm), clip(unbuilt)
+
+# --- FNP Wohn-/gemischte Bauflächen (GML 2, lat/lon order)
+import re
+gml = urlopen(Request("https://testportal-plandigital.de/ows/3355022/fplan?" + urlencode({
+    "Service": "WFS", "Version": "1.1.0", "Request": "GetFeature", "TypeName": "ms:fp_bebauungsflaeche_polygons",
+    "outputFormat": "text/xml; subtype=gml/2.1.2", "srsName": "EPSG:4326"}), headers=UA), timeout=180).read().decode()
+def gring(txt):
+    return [(float(b), float(a)) for a, b in (p.split(",") for p in txt.split())]
+fnp = []
+for fm in gml.split("<gml:featureMember>")[1:]:
+    art = re.search(r"<ms:allgartderbaulnutzung>(\d+)<", fm)
+    if not art or art.group(1) not in ("1000", "2000"):  # Wohnbaufläche, gemischte Baufläche
+        continue
+    for poly in re.findall(r"<gml:Polygon.*?</gml:Polygon>", fm, re.S):
+        outer = re.search(r"<gml:outerBoundaryIs>.*?<gml:coordinates>(.*?)</gml:coordinates>", poly, re.S)
+        inner = re.findall(r"<gml:innerBoundaryIs>.*?<gml:coordinates>(.*?)</gml:coordinates>", poly, re.S)
+        fnp.append(transform(to_m, Polygon(gring(outer.group(1)), [gring(i) for i in inner]).buffer(0)))
+fnp = clip(fnp)
+reserve = fnp.intersection(unbuilt)
+print("FNP W/M km²", round(fnp.area / 1e6, 2), "| unbuilt reserve km²", round(reserve.area / 1e6, 2))
 bld = unary_union(buildings)
-excl = {"nsg": nsg, "lsg": lsg, "flood": flood, "forest": forest, "cemetery": cemetery}
+excl = {"nsg": nsg, "lsg": lsg, "flood": flood, "forest": forest, "cemetery": cemetery,
+        "allot": allot, "parking": parking, "green": green}
 all_excl = unary_union(list(excl.values()))
 print({k: round(v.area / 1e6, 2) for k, v in excl.items()}, "km² | buildings", len(buildings))
+
+def polys_only(g):
+    """Drop points/lines that intersections leave behind (they render as map pins)."""
+    if g["type"] != "GeometryCollection":
+        return g if g["type"] in ("Polygon", "MultiPolygon") else None
+    cs = [c for x in g["geometries"] for c in ([x["coordinates"]] if x["type"] == "Polygon" else x["coordinates"] if x["type"] == "MultiPolygon" else [])]
+    return {"type": "MultiPolygon", "coordinates": cs} if cs else None
+
 
 blocks = json.loads((ROOT / "src/data/blocke.json").read_text(encoding="utf-8"))
 out = []
@@ -136,9 +186,14 @@ for b in blocks:
     rest_area = rest.area if not rest.is_empty else 0
     cover = round(rest.intersection(bld).area / rest_area * 100, 1) if rest_area else None
     geom = transform(to_w, rest.simplify(3, preserve_topology=True)) if rest_area else None
+    fnp_ha = round(rest.intersection(fnp).area / 1e4, 1) if rest_area else 0
+    res = rest.intersection(reserve) if rest_area else Polygon()
+    farm_pct = round(rest.intersection(farm).area / rest_area * 100) if rest_area else 0
     out.append({"id": b[0], "d": dn, "ew": b[1], "living": b[2], "vac": b[3],
                 "cover": cover, "freeHa": round(rest_area / 1e4, 1),
                 "exclPct": round((1 - rest_area / full.area) * 100), "excl": {k: v for k, v in reasons.items() if v},
+                "fnpHa": fnp_ha, "resHa": round(res.area / 1e4, 1), "farmPct": farm_pct,
+                "rg": polys_only(mapping(transform(to_w, res.simplify(3, preserve_topology=True)))) if res.area > 500 else None,
                 "g": mapping(geom) if geom else None})
 
 def rnd(o):
