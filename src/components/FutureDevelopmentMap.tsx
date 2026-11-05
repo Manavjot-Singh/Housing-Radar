@@ -34,6 +34,7 @@ export function FutureDevelopmentMap({ lang, t }: { lang: "de" | "en"; t: Thresh
     layer.eachLayer((l) => {
       const b = (l as import("leaflet").Layer & { feature: GeoJSON.Feature }).feature.properties as { idx: number };
       const blk = futureBlocks[b.idx];
+      if (!blk) return;
       const e = evaluate(blk, th);
       (l as import("leaflet").Path).setStyle(e.pass
         ? { color: "#14532d", weight: 1.5, fillColor: "#22c55e", fillOpacity: 0.55 }
