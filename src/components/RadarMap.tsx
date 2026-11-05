@@ -99,7 +99,6 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
 
     if (detail) {
       const grp = Lf.layerGroup();
-      const renderer = Lf.canvas();
       const dLat = 0.00045, dLon = 0.00075;
       for (const c of cells) {
         const b = blockOf(c);
@@ -129,7 +128,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
           ? `<b>${tx.cell} · ${c[9]}</b><br>${tx.cellRes}: ${c[2] ?? "–"}`
           : `<b>${tx.block} · ${c[9]}</b><br>${tx.cellRes}: ${b[1]}<br>${tx.blockCells}: ${b[8]}`;
         Lf.rectangle([[c[1] - dLat, c[0] - dLon], [c[1] + dLat, c[0] + dLon]], {
-          stroke: false, fillColor: fill, fillOpacity: opacity, renderer,
+          stroke: false, fillColor: fill, fillOpacity: opacity,
         })
           .bindTooltip(`${head}<br>${rows.join("<br>")}`, { sticky: true })
           .on("click", () => onSelectRef.current(c[9]))
