@@ -57,3 +57,21 @@ export const loadMunicipality = createServerFn({ method: "POST" })
     const [nsg, lsg] = await Promise.all([nsgP, lsgP]);
     return analyse({ name: data.name, ags: data.ags, boundary, nsg, lsg, buildings, truncated });
   });
+
+export const searchMunicipality = createServerFn({ method: "POST" })
+  .inputValidator((d: { q: string }) => ({ q: String(d.q).trim().slice(0, 80) }))
+  .handler(async ({ data }) => {
+    const u = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: `${data.q}, Niedersachsen`, countrycodes: "de", format: "jsonv2", extratags: "1", addressdetails: "1", limit: "15", "accept-language": "de" })}`;
+    const r = await fetch(u, { headers: UA });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const rows = (await r.json()) as { osm_type: string; osm_id: number; name: string; display_name: string; address?: Record<string, string>; extratags?: Record<string, string> | null }[];
+    const seen = new Set<string>();
+    const hits: { osmId: number; name: string; label: string; ags: string }[] = [];
+    for (const x of rows) {
+      const ags = x.extratags?.["de:amtlicher_gemeindeschluessel"] ?? "";
+      if (x.osm_type !== "relation" || x.address?.["ISO3166-2-lvl4"] !== "DE-NI" || !/^03\d{6}$/.test(ags) || seen.has(ags)) continue;
+      seen.add(ags);
+      hits.push({ osmId: x.osm_id, name: x.name, label: x.display_name, ags });
+    }
+    return hits;
+  });

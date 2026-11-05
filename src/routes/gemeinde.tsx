@@ -6,7 +6,7 @@ import { MunicipalityMap } from "@/components/MunicipalityMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLang } from "@/lib/i18n";
-import { loadMunicipality } from "@/lib/municipality.functions";
+import { loadMunicipality, searchMunicipality } from "@/lib/municipality.functions";
 import type { MunicipalityResult } from "@/lib/municipality";
 
 export const Route = createFileRoute("/gemeinde")({
@@ -23,24 +23,13 @@ export const Route = createFileRoute("/gemeinde")({
   component: Gemeinde,
 });
 
-type Hit = { osmId: number; name: string; label: string; ags: string };
-
-async function searchNI(q: string): Promise<Hit[]> {
-  const u = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: `${q}, Niedersachsen`, countrycodes: "de", format: "jsonv2", extratags: "1", addressdetails: "1", limit: "15", "accept-language": "de" })}`;
-  const r = await fetch(u);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const rows = (await r.json()) as { osm_type: string; osm_id: number; name: string; display_name: string; address?: Record<string, string>; extratags?: Record<string, string> }[];
-  const seen = new Set<string>();
-  return rows
-    .filter((x) => x.osm_type === "relation" && x.address?.["ISO3166-2-lvl4"] === "DE-NI" && /^03\d{6}$/.test(x.extratags?.["de:amtlicher_gemeindeschluessel"] ?? ""))
-    .map((x) => ({ osmId: x.osm_id, name: x.name, label: x.display_name, ags: x.extratags!["de:amtlicher_gemeindeschluessel"] }))
-    .filter((h) => (seen.has(h.ags) ? false : (seen.add(h.ags), true)));
-}
+type Hit = Awaited<ReturnType<typeof searchMunicipality>>[number];
 
 function Gemeinde() {
   const [lang] = useLang();
   const en = lang === "en";
   const load = useServerFn(loadMunicipality);
+  const search = useServerFn(searchMunicipality);
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [pick, setPick] = useState<Hit | null>(null);
@@ -53,7 +42,7 @@ function Gemeinde() {
     e.preventDefault();
     if (!q.trim()) return;
     setBusy("search"); setErr(null); setPick(null); setData(null);
-    try { const h = await searchNI(q.trim()); setHits(h); if (h.length === 1) setPick(h[0]); }
+    try { const h = await search({ data: { q: q.trim() } }); setHits(h); if (h.length === 1) setPick(h[0]); }
     catch { setErr(en ? "Search failed. Please try again." : "Suche fehlgeschlagen. Bitte erneut versuchen."); }
     finally { setBusy(null); }
   };
