@@ -164,6 +164,14 @@ excl = {"nsg": nsg, "lsg": lsg, "flood": flood, "forest": forest, "cemetery": ce
 all_excl = unary_union(list(excl.values()))
 print({k: round(v.area / 1e6, 2) for k, v in excl.items()}, "km² | buildings", len(buildings))
 
+def polys_only(g):
+    """Drop points/lines that intersections leave behind (they render as map pins)."""
+    if g["type"] != "GeometryCollection":
+        return g if g["type"] in ("Polygon", "MultiPolygon") else None
+    cs = [c for x in g["geometries"] for c in ([x["coordinates"]] if x["type"] == "Polygon" else x["coordinates"] if x["type"] == "MultiPolygon" else [])]
+    return {"type": "MultiPolygon", "coordinates": cs} if cs else None
+
+
 blocks = json.loads((ROOT / "src/data/blocke.json").read_text(encoding="utf-8"))
 out = []
 for b in blocks:
@@ -185,7 +193,7 @@ for b in blocks:
                 "cover": cover, "freeHa": round(rest_area / 1e4, 1),
                 "exclPct": round((1 - rest_area / full.area) * 100), "excl": {k: v for k, v in reasons.items() if v},
                 "fnpHa": fnp_ha, "resHa": round(res.area / 1e4, 1), "farmPct": farm_pct,
-                "rg": mapping(transform(to_w, res.simplify(3, preserve_topology=True))) if res.area > 500 else None,
+                "rg": polys_only(mapping(transform(to_w, res.simplify(3, preserve_topology=True)))) if res.area > 500 else None,
                 "g": mapping(geom) if geom else None})
 
 def rnd(o):
