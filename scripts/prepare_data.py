@@ -56,3 +56,12 @@ json.dump(dict(stadtWohnflaecheProKopf=city,einwohner=int(tot['ew']),zellen=len(
 json.dump(cells,open('/tmp/d/out/gitter.json','w'),ensure_ascii=False,separators=(',',':'))
 for f in sorted(feats,key=lambda f:-(f['properties']['wohnflaecheProKopf'] or 0)):print(f['properties'])
 print(city,tot['ew'],len(cells))
+
+# ---- Quelle 4: ALKIS Hausumringe (LGLN, CC-BY 4.0) -> Bebauungsdichte je Stadtteil
+# Download: https://hausumringe-nie.s3.eu-de.cloud-object-storage.appdomain.cloud/gebaeude-ni.zip (~690 MB, EPSG:25832)
+# Mit pyshp auf die Lüneburger Bbox filtern (AGS 03355022 = Hansestadt Lüneburg),
+# dann jedes Gebaeude ueber seinen Schwerpunkt einem Stadtteil zurechnen:
+#   bebautAnteil = Summe Grundflaechen / Stadtteilflaeche * 100
+#   wohnGrundflaecheM2 = nur Gebaeude mit Gebaeudefunktion 1xxx (Wohnen)
+# Ergebnis: src/data/gebaeude.json; die Felder gebaeude/bebautAnteil/wohnGrundflaecheM2
+# werden in stadtteile.json gemergt.
