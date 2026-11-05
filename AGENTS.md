@@ -34,3 +34,4 @@ use the editor.
 - The 500 m block layer is built by scripts/prepare_blocks.py from gitter.json; its tile origin and size must stay identical to the constants in src/lib/radar.ts, or cells silently lose their block.
 - The map's cell layer must use Leaflet's SVG renderer: with the canvas renderer hit-testing never fires, so hover tooltips over cells and blocks disappear without any error.
 - Amenity reach is stored per grid cell as a bitmask (scripts/add_bakeries.py); the app scores cells, blocks and districts client-side against the ticked amenities (setAmenitySelection in src/lib/radar.ts), so the score always matches the selection.
+- Amenity reach uses walking distance over the OSM path network (scripts/walking_reach.py, run after add_bakeries.py and before prepare_blocks.py); straight-line reach overstated access across the river and railway.
