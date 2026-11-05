@@ -1,12 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type * as L from "leaflet";
 import gitter from "@/data/gitter.json";
 import versorgung from "@/data/versorgung.json";
 import { t } from "@/lib/i18n";
 import {
-  cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
-  type Cell, type Condition, type District,
+  blockOf, blockOwn, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
+  type Cell, type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
 export type AmenityKey = "shop" | "doc" | "pt";
@@ -41,6 +41,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const libRef = useRef<typeof L | null>(null);
+  const [unit, setUnit] = useState<"block" | "cell" | null>(null);
   const layers = useRef<L.Layer[]>([]);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
@@ -60,6 +61,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
         opacity: 0.45,
       }).addTo(map);
       mapRef.current = map;
+      map.on("zoomend", () => renderRef.current());
       render();
       map.fitBounds(Lf.geoJSON(geo).getBounds(), { padding: [10, 10] });
     });
@@ -90,37 +92,45 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
     const combo = conditions.length > 1;
     const single = conditions[0]?.ind;
     const detail = combo || (single != null && showGrid && indicators[single].gridSource);
+    // A 100 m square is about 4 pixels wide in the city overview, so colours come from the
+    // 500 m blocks there; from zoom 14 up the census cells themselves are big enough to colour.
+    const zoomed = map.getZoom() >= 14;
+    setUnit(detail ? (zoomed ? "cell" : "block") : null);
 
     if (detail) {
       const grp = Lf.layerGroup();
-      const renderer = Lf.canvas();
       const dLat = 0.00045, dLon = 0.00075;
       for (const c of cells) {
+        const b = blockOf(c);
+        const shown = (k: Indicator) => (zoomed ? cellValue(c, k) : b ? blockValueOf(b, k) : null);
+        const own = (k: Indicator) => (zoomed ? cellOwn(c, k) : b ? blockOwn(b, k) : null);
         let fill: string;
         let opacity = 0.85;
         let marks: (boolean | null)[] = [];
         if (combo) {
           if (!c[2]) continue;
-          const res = conditions.map((k) => meets(cellValue(c, k.ind), k));
+          const res = conditions.map((k) => meets(shown(k.ind), k));
           marks = res;
           const hit = res.filter((r) => r === true).length;
           if (hit === conditions.length) fill = color(5);
           else if (hit === conditions.length - 1) { fill = color(2); opacity = 0.6; }
           else continue;
         } else {
-          fill = color(scaleClass(cellOwn(c, single!), single!));
+          fill = color(scaleClass(own(single!), single!));
         }
         const rows = (combo ? conditions.map((k) => k.ind) : [single!]).map((k, idx) => {
-          const own = cellOwn(c, k);
-          const v = combo ? cellValue(c, k) : own;
+          const v = shown(k);
           const u = indicators[k].unit;
           const m = combo ? (marks[idx] ? "✔ " : marks[idx] === false ? "✘ " : "? ") : "";
-          return `${m}${label(k)}: ${v != null ? f1(v) + (u ? " " + u : "") : tx.noData}${combo && own == null && v != null ? ` <i>(${tx.districtValue})</i>` : ""}`;
+          return `${m}${label(k)}: ${v != null ? f1(v) + (u ? " " + u : "") : tx.noData}${combo && own(k) == null && v != null ? ` <i>(${tx.districtValue})</i>` : ""}`;
         });
+        const head = zoomed || !b
+          ? `<b>${tx.cell} · ${c[9]}</b><br>${tx.cellRes}: ${c[2] ?? "–"}`
+          : `<b>${tx.block} · ${c[9]}</b><br>${tx.cellRes}: ${b[1]}<br>${tx.blockCells}: ${b[8]}`;
         Lf.rectangle([[c[1] - dLat, c[0] - dLon], [c[1] + dLat, c[0] + dLon]], {
-          stroke: false, fillColor: fill, fillOpacity: opacity, renderer,
+          stroke: false, fillColor: fill, fillOpacity: opacity,
         })
-          .bindTooltip(`<b>${tx.cell} · ${c[9]}</b><br>${tx.cellRes}: ${c[2] ?? "–"}<br>${rows.join("<br>")}`, { sticky: true })
+          .bindTooltip(`${head}<br>${rows.join("<br>")}`, { sticky: true })
           .on("click", () => onSelectRef.current(c[9]))
           .addTo(grp);
       }
@@ -165,5 +175,14 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
     layers.current.push(pg);
   }
 
-  return <div ref={el} className="h-full w-full" aria-label={lang === "en" ? "Map of Lüneburg districts" : "Karte der Lüneburger Stadtteile"} />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={el} className="h-full w-full" aria-label={lang === "en" ? "Map of Lüneburg districts" : "Karte der Lüneburger Stadtteile"} />
+      {unit && (
+        <div className="pointer-events-none absolute right-2 top-2 z-[400] rounded-sm border bg-card/95 px-2 py-1 font-mono text-xs">
+          {unit === "block" ? t[lang].showingBlock : t[lang].showingCell}
+        </div>
+      )}
+    </div>
+  );
 }

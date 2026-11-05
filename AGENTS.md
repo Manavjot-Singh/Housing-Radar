@@ -31,3 +31,5 @@ use the editor.
 
 - Housing data is precomputed offline by scripts/prepare_data.py (Zensus 2022 100m grid + OSM districts) into src/data/*.json; the app reads static JSON so the demo needs no backend.
 - Analysis layers (65+, building type, rooms, OSM amenities) are added by scripts/prepare_layers.py on top of prepare_data.py output; combined analyses run client-side on the static grid.
+- The 500 m block layer is built by scripts/prepare_blocks.py from gitter.json; its tile origin and size must stay identical to the constants in src/lib/radar.ts, or cells silently lose their block.
+- The map's cell layer must use Leaflet's SVG renderer: with the canvas renderer hit-testing never fires, so hover tooltips over cells and blocks disappear without any error.

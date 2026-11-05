@@ -3,10 +3,9 @@ import { useMemo, useState } from "react";
 import { RadarMap, type AmenityKey } from "@/components/RadarMap";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useLang, t } from "@/lib/i18n";
-import gitter from "@/data/gitter.json";
 import {
-  analyses, thresholdText, cellValue, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, meets, scaleClass, value, verdict,
-  type Cell, type Condition, type Dir, type Indicator,
+  analyses, thresholdText, blocks, blockValueOf, cityAvg, cityPopulation, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, meets, scaleClass, value, verdict,
+  type Condition, type Dir, type Indicator,
 } from "@/lib/radar";
 
 export const Route = createFileRoute("/")({
@@ -25,7 +24,6 @@ export const Route = createFileRoute("/")({
 
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
 const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)" };
-const cells = gitter as unknown as Cell[];
 const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "bebautAnteil", "einwohnerJeGebaeude"];
 const defaultDir: Record<Indicator, Dir> = {
   wohnflaecheProKopf: "high", leerstandsquote: "high", anteil65: "high", efhAnteil: "high",
@@ -66,16 +64,16 @@ function Index() {
     if (a.conditions.some((c) => c.ind === "versorgung")) setAmenities({ shop: true, doc: true, pt: false });
   }
 
-  // share of residents per district living in squares meeting all conditions
+  // share of residents per district living in 500 m blocks meeting all conditions
   const hits = useMemo(() => {
     if (!combo) return [];
     const m = new Map<string, { hit: number; all: number }>();
-    for (const c of cells) {
-      if (!c[2]) continue;
-      const e = m.get(c[9]) ?? { hit: 0, all: 0 };
-      e.all += c[2];
-      if (conditions.every((k) => meets(cellValue(c, k.ind), k) === true)) e.hit += c[2];
-      m.set(c[9], e);
+    for (const b of blocks) {
+      if (!b[1]) continue;
+      const e = m.get(b[10]) ?? { hit: 0, all: 0 };
+      e.all += b[1];
+      if (conditions.every((k) => meets(blockValueOf(b, k.ind), k) === true)) e.hit += b[1];
+      m.set(b[10], e);
     }
     return [...m.entries()].map(([name, e]) => ({ name, share: (e.hit / e.all) * 100, people: e.hit })).sort((a, b) => b.share - a.share);
   }, [combo, conditions]);
