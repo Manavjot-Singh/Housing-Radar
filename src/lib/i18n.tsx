@@ -31,7 +31,7 @@ export function useLang(): [Lang, (l: Lang) => void] {
 
 export const t = {
   de: {
-    map: "Karte", sources: "Quellen & Methode", city: city.labelDe,
+    map: "Dashboard", sources: "Daten & Methodik", city: city.labelDe,
     title: `WOHNRAUM-RADAR ${city.name.toUpperCase()}: POTENZIALE ENTFALTEN`,
     intro: (avg: string, pop: string) => <>Im {city.avgDe} hat jeder Einwohner <strong className="text-foreground">{avg} m²</strong> Wohnfläche ({pop} Einwohner in {districts.length} Stadtteilen). {city.datasetsDe}, auf Stadtteile zusammengeführt, ganz ohne personenbezogene Daten.</>,
     detail: "Detailfarben innerhalb der Stadtteile (500-m-Blöcke, 100 m beim Reinzoomen)",
@@ -52,7 +52,7 @@ export const t = {
     old: "Ab 65 Jahre", efh: "Ein-/Zweifamilienhäuser", rooms: "Räume / Person", amen: "Versorgung",
   },
   en: {
-    map: "Map", sources: "Sources & method", city: city.labelEn,
+    map: "Dashboard", sources: "Data & Methods", city: city.labelEn,
     title: `HOUSING RADAR ${city.name.toUpperCase()}: UNLOCK THE POTENTIAL`,
     intro: (avg: string, pop: string) => <>On average, each resident of {city.name} has <strong className="text-foreground">{avg} m²</strong> of living space ({pop} residents in {districts.length} districts). {city.datasetsEn}, merged by district, with no personal data at all.</>,
     detail: "Detailed colours within districts (500 m blocks, 100 m when zoomed in)",

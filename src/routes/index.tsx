@@ -127,9 +127,6 @@ function Index() {
           <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 p-3 select-none">
             <span className="text-sm transition-transform group-open:rotate-90">▸</span>
             <span className="kicker">{tx.layers}</span>
-            <span className="text-xs text-muted-foreground">
-              {conditions.length ? conditions.map((c) => L(c.ind)).join(" · ") : tx.noLayer}
-            </span>
           </summary>
           <div className="border-t p-3">
           <p className="mb-2 text-xs text-muted-foreground">{tx.layersHint}</p>

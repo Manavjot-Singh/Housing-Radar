@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useLang } from "@/lib/i18n";
 
@@ -10,7 +9,7 @@ const TOOL = "http://127.0.0.1:8770";
  * behind it runs scripts on this machine, so the button appears only on a dev server opened from
  * this machine. Lovable's preview is a dev server too, but the tool can never be reached from it.
  */
-export function MunicipalitySwitcher() {
+export function MunicipalitySwitcher({ className }: { className?: string }) {
   const [lang] = useLang();
   const en = lang === "en";
   const [local, setLocal] = useState(false);
@@ -41,7 +40,7 @@ export function MunicipalitySwitcher() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">{en ? "Change municipality" : "Gemeinde wechseln"}</Button>
+        <button type="button" className={className}>{en ? "Change municipality" : "Gemeinde wechseln"}</button>
       </DialogTrigger>
       <DialogContent className="z-[2000] flex h-[85vh] max-w-4xl flex-col">
         <DialogHeader>

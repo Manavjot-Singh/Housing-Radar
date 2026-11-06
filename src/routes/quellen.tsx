@@ -6,9 +6,9 @@ import { useLang } from "@/lib/i18n";
 export const Route = createFileRoute("/quellen")({
   head: () => ({
     meta: [
-      { title: `Quellen & Methode – Housing Radar ${city.name}` },
+      { title: `Daten & Methodik – Housing Radar ${city.name}` },
       { name: "description", content: "Welche offenen Daten der Housing Radar nutzt, wie sie zusammengeführt werden und wo ihre Grenzen liegen." },
-      { property: "og:title", content: `Quellen & Methode – Housing Radar ${city.name}` },
+      { property: "og:title", content: `Daten & Methodik – Housing Radar ${city.name}` },
       { property: "og:description", content: "Lizenzen, räumliche Ebene, Aktualität und Datenlücken der verwendeten Quellen." },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
@@ -18,57 +18,35 @@ export const Route = createFileRoute("/quellen")({
 });
 
 const stepsDe = [
-  ["Laden", "Zensus-2022-Tabellen im 100-m-Gitter (Einwohner, Wohnfläche je Bewohner, Leerstandsquote, Anteil ab 65, Gebäude nach Wohnungszahl, Wohnungen nach Räumen), Supermärkte, Bäckereien, Arztpraxen und Haltestellen aus OpenStreetMap, die Stadtteilgrenzen aus OpenStreetMap und die amtlichen ALKIS-Gebäudegrundrisse des LGLN."],
-  ["Zusammenführen", "Jede Gitterzelle wird über ihren Mittelpunkt genau einem Stadtteil zugeordnet (EPSG:3035). Jedes Gebäude wird über seinen Schwerpunkt einem Stadtteil zugerechnet (EPSG:25832). Für die Karte werden die 100-m-Zellen zusätzlich zu Blöcken von rund 500 m Kantenlänge zusammengefasst (5 × 5 Zellen), die nie über eine Stadtteilgrenze gehen – 1.897 Zellen ergeben 245 Blöcke. Pro Block werden die Werte nach Einwohnern gewichtet."],
-  ["Kennzahl", "Wohnfläche pro Einwohner je Stadtteil = nach Einwohnern gewichteter Mittelwert der Zellen. Bebauungsdichte = Summe der Gebäudegrundflächen geteilt durch die Stadtteilfläche. Einwohner je Gebäude = Zensus-Bevölkerung dividiert durch die Zahl der ALKIS-Gebäude im Stadtteil. Räume pro Person = Summe der Räume (7+ als 7) geteilt durch Einwohner. Versorgung = Zahl der Angebote in Gehweite (Supermarkt/Bäckerei/Arzt 600 m, Halt 400 m Fußweg über das OSM-Wegenetz vom Zellmittelpunkt). Kombinierte Analysen: „hoch“ = obere zwei Farbstufen, „niedrig“ = untere zwei."],
-  ["Datenschutz", "Es werden nur bereits amtlich geheimgehaltene Zensusdaten genutzt. Ergebnisse erscheinen nur auf Stadtteil-, 500-m-Block- bzw. 100-m-Ebene, nie für Personen oder Haushalte."],
+  ["Laden", "Zensus-2022-Daten im 100-m-Gitter, Versorgungsangebote und Stadtteile aus OpenStreetMap sowie amtliche ALKIS-Gebäudegrundrisse."],
+  ["Zusammenführen", "Jede Zelle und jedes Gebäude wird einem Stadtteil zugeordnet. Die Zellen werden dann zu 500-m-Blöcken zusammengefasst (1.897 Zellen ergeben 245 Blöcke)."],
+  ["Berechnen", "Kennzahlen wie Wohnfläche pro Einwohner, Leerstand, Bebauungsdichte und Fußwege zu Versorgungsangeboten, die sich zu Analysen kombinieren lassen."],
+  ["Datenschutz", "Es werden nur anonymisierte Zensusdaten genutzt. Ergebnisse erscheinen nie für Personen oder Haushalte."],
 ];
 
 const limitsDe = [
-  "Stichtag ist Mai 2022; Neubaugebiete seitdem fehlen.",
-  "Der Zensus verändert kleine Fallzahlen leicht (Cell-Key-Methode) und lässt manche Zellen aus Geheimhaltungsgründen leer. Die Spalte „Datenabdeckung“ zeigt, für welchen Anteil der Einwohner ein Wohnflächenwert vorlag.",
-  "Für Wilschenbruch liegt keine Leerstandsquote vor.",
-  "Die Leerstandsquote zählt ausschließlich Wohnungen. Gewerbeleerstand kommt separat aus dem LeAn-Auszug des Leerstandsmanagements.",
-  "Der LeAn-Auszug umfasst nur 55 Gewerbeobjekte in Altstadt-Einkaufsstraßen (4 leer, 4 drohend leer); außerhalb gilt „keine Angabe“, nicht „kein Leerstand“. Hausnummern sind anonymisiert, deshalb liegt jedes Objekt auf der Mitte seiner Straße. Eigentümer- und Kontaktdaten werden nicht übernommen.",
-  "Die Analyse „Wohn- und Gewerbeleerstand“ nutzt für den Wohnleerstand eine niedrigere Schwelle (≥ 10 %), weil kein Altstadt-Block die sonst übliche Schwelle von 14 % erreicht; der Stadtschnitt liegt bei 3,5 %.",
-  "Die Leerstandsquote ist nach Einwohnern statt nach Wohnungen gewichtet, weil keine Wohnungszahl je Zelle geladen wurde. Das ist eine Näherung.",
-  "Zellen an Stadtteilgrenzen werden vollständig dem Stadtteil ihres Mittelpunkts zugerechnet.",
-  "Die Stadtteilgrenzen aus OpenStreetMap sind keine amtlichen Grenzen; sie sollten mit Lüne-GIS abgeglichen werden.",
-  "Die Bebauungsdichte zählt nur die Grundfläche der Gebäude, nicht die Geschosse – sie ist ein erster Anhaltspunkt für Nachverdichtung, kein Ersatz für ein Baulückenkataster. Garagen und Nebengebäude sind enthalten.",
-  "Die Zahl „Einwohner je Gebäude“ zählt alle amtlich erfassten Gebäude, also auch Garagen, Schuppen und Betriebsgebäude. Der tatsächliche Besatz je Wohngebäude ist deshalb höher; die Kennzahl ist ein Vergleichswert zwischen Stadtteilen, keine absolute Größe.",
-  "In kombinierten Analysen zählt für Blöcke ohne eigenen Wert der Stadtteilwert. Das betrifft vor allem den Leerstand: nur 86 von 245 Blöcken haben einen eigenen Wert, sie decken aber 74 % der Einwohner ab (auf 100-m-Ebene wären es nur 21 %).",
-  "Die 500-m-Blöcke fassen bis zu 25 Zellen zusammen – Unterschiede innerhalb eines Blocks sind in der Übersicht nicht sichtbar. Ab Zoom 14 zeigt die Karte wieder die einzelnen 100-m-Quadrate.",
-  "Der Anteil der Ein-/Zweifamilienhäuser wird pro Block über die Zellen gemittelt, nicht über Gebäudezahlen, weil je Zelle keine Gebäudezahl vorlag.",
-  "Die Versorgung misst echte Fußwege über Straßen und Wege aus OpenStreetMap (ohne Autobahnen/Schnellstraßen); Fluss und Bahn werden nur über Brücken bzw. Übergänge gequert. Angebote knapp außerhalb der Stadt zählen mit. Die Vollständigkeit von OpenStreetMap ist nicht garantiert.",
-  "Räume pro Person enthält auch Küchen ab 6 m² (Zensus-Definition) und bezieht sich auf alle Einwohner, auch in Wohnheimen.",
-  "Einwohner- und Gebäudezahlen stammen aus verschiedenen Erhebungen mit unterschiedlichen Stichtagen (Zensus Mai 2022, ALKIS September 2026).",
+  "Datenstand: Der Zensus stammt von Mai 2022, neuerer Wohnungsbau fehlt.",
+  "Leerstandslücken: Nur 86 von 245 Blöcken haben einen eigenen Leerstandswert; sie decken 74 % der Einwohner ab. Die übrigen nutzen den Stadtteilwert.",
+  "Gewerbeleerstand: Die Daten umfassen nur 55 Objekte in Altstadt-Einkaufsstraßen. Anderswo heißt das „keine Angabe“, nicht „kein Leerstand“.",
+  "Stadtteilgrenzen: Sie stammen aus OpenStreetMap und sind nicht amtlich.",
+  "Bebauungsdichte: Sie berücksichtigt keine Geschosse und enthält Garagen, ist also nur ein erster Anhaltspunkt für mögliche Bauflächen.",
+  "Versorgung: Die Ergebnisse hängen davon ab, wie vollständig OpenStreetMap ist.",
 ];
 
 const stepsEn = [
-  ["Load", "Census 2022 tables on the 100 m grid (residents, living space per resident, vacancy rate, share 65+, buildings by dwellings, dwellings by rooms), supermarkets, bakeries, doctors and stops from OpenStreetMap, district boundaries from OpenStreetMap and the official ALKIS building footprints from LGLN."],
-  ["Merge", "Each grid cell is assigned to exactly one district via its centre point (EPSG:3035). Each building is assigned to a district via its centroid (EPSG:25832). For the map, the 100 m cells are additionally grouped into blocks of about 500 m edge length (5 × 5 cells) that never cross a district border – 1,897 cells make 245 blocks. Within a block, values are weighted by residents."],
-  ["Indicator", "Living space per resident per district = resident-weighted mean of the cells. Building density = total building footprint divided by district area. Residents per building = census population divided by the number of ALKIS buildings in the district. Rooms per person = total rooms (7+ counted as 7) divided by residents. Amenities = number of services within walking distance (supermarket/bakery/doctor 600 m, stop 400 m walking route over the OSM path network from the cell centre). Combined analyses: “high” = top two colour classes, “low” = bottom two."],
-  ["Privacy", "Only census data that is already officially anonymised is used. Results appear only at district, 500 m block or 100 m level, never for persons or households."],
+  ["Load", "Census 2022 data on a 100 m grid, OpenStreetMap amenities and districts, and official ALKIS building footprints."],
+  ["Merge", "Each cell and building is assigned to one district, then cells are grouped into 500 m blocks (1,897 cells make 245 blocks)."],
+  ["Calculate", "Indicators such as living space per resident, vacancy, building density and walking distance to amenities, which can then be combined into analyses."],
+  ["Protect privacy", "Only anonymised census data is used, and results are never shown for individuals or households."],
 ];
 
 const limitsEn = [
-  "The reference date is May 2022; newer housing developments are missing.",
-  "The census slightly perturbs small counts (cell-key method) and leaves some cells empty for confidentiality. “Data coverage” shows for what share of residents a living-space value was available.",
-  "No vacancy rate is available for Wilschenbruch.",
-  "The vacancy rate counts dwellings only. Commercial vacancy comes separately from the LeAn extract of the vacancy management system.",
-  "The LeAn extract covers only 55 commercial units in Altstadt shopping streets (4 vacant, 4 at risk); elsewhere it means “no data”, not “no vacancy”. House numbers are anonymised, so each unit sits at the middle of its street. Owner and contact data are not used.",
-  "The “Housing and commercial vacancy” analysis uses a lower housing-vacancy threshold (≥ 10 %), because no Altstadt block reaches the usual 14 %; the city average is 3.5 %.",
-  "The vacancy rate is weighted by residents rather than dwellings, because no dwelling count per cell was loaded. This is an approximation.",
-  "Cells on district borders are assigned entirely to the district containing their centre.",
-  "The OpenStreetMap district boundaries are not official; they should be checked against Lüne-GIS.",
-  "Building density counts only the footprint, not the number of storeys – it is a first indication of densification potential, not a replacement for a vacant-plot register. Garages and outbuildings are included.",
-  "“Residents per building” counts all officially recorded buildings, including garages, sheds and commercial buildings. The real occupancy per residential building is therefore higher; the figure is for comparing districts, not an absolute value.",
-  "In combined analyses, blocks without their own value use the district value. This mainly affects vacancy: only 86 of 245 blocks have their own value, but they cover 74 % of residents (on the 100 m level it would be only 21 %).",
-  "The 500 m blocks pool up to 25 cells – differences inside a block are not visible in the overview. From zoom 14 the map shows the individual 100 m squares again.",
-  "The share of detached/two-family houses is averaged over the cells in a block rather than over building counts, because no building count per cell was available.",
-  "Amenities are measured as real walking routes over OpenStreetMap streets and paths (no motorways); river and railway can only be crossed at bridges or crossings. OpenStreetMap completeness is not guaranteed.",
-  "Rooms per person includes kitchens of 6 m² or more (census definition) and refers to all residents, including those in shared accommodation.",
-  "Resident and building figures come from different surveys with different reference dates (census May 2022, ALKIS September 2026).",
+  "Data age: the census is from May 2022, so newer housing is missing.",
+  "Vacancy gaps: only 86 of 245 blocks have their own vacancy value, though they cover 74 % of residents. The others use the district value.",
+  "Commercial vacancy: the data covers just 55 units in Altstadt shopping streets, so elsewhere it means “no data”, not “no vacancy”.",
+  "District boundaries: they come from OpenStreetMap and aren't official.",
+  "Building density: it ignores storeys and includes garages, so it's only a first indication of where building could go.",
+  "Amenities: results depend on how complete OpenStreetMap is.",
 ];
 
 function Quellen() {
@@ -81,7 +59,7 @@ function Quellen() {
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-4 py-8">
         <p className="kicker">{en ? "Transparency" : "Transparenz"}</p>
-        <h1 className="text-5xl font-bold uppercase">{en ? "Sources & method" : "Quellen & Methode"}</h1>
+        <h1 className="text-5xl font-bold uppercase">{en ? "Data & Methods" : "Daten & Methodik"}</h1>
 
         <h2 className="mt-8 text-2xl font-bold uppercase">{en ? "Sources used" : "Verwendete Quellen"}</h2>
         <div className="mt-3 overflow-x-auto rounded-md border bg-card">
