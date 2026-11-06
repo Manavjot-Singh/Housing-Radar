@@ -87,7 +87,19 @@ export function FutureDevelopmentPlans() {
         <FutureDevelopmentMap lang={lang} t={t} focus={focus} />
       </div>
       <div className="mt-4 rounded-md border p-4">
-        <p className="kicker">{en ? "Direction for outward growth" : "Richtung für Stadterweiterung"}</p>
+        <div className="flex items-center gap-2">
+          <p className="kicker">{en ? "Direction for outward growth" : "Richtung für Stadterweiterung"}</p>
+          <Popover>
+            <PopoverTrigger aria-label={en ? "How the growth direction is chosen" : "So wird die Richtung bestimmt"} className={INFO_BUTTON}>i</PopoverTrigger>
+            <PopoverContent className="w-96 max-w-[calc(100vw-2rem)] text-sm">
+              <p className="text-muted-foreground">
+                {en
+                  ? `Only blocks on the city edge count. A block qualifies if it meets all conditions above${features.fnp ? " or holds still-unbuilt housing land from the land-use plan (both after exclusions)" : ""}. The three districts with the most such area are suggested and their blocks outlined in red on the map. Changes with the sliders.`
+                  : `Gezählt werden nur Blöcke am Stadtrand. Ein Block zählt, wenn er alle Bedingungen oben erfüllt${features.fnp ? " oder noch unbebaute Wohnbaufläche aus dem Flächennutzungsplan enthält (beides nach Abzug der Ausschlussflächen)" : ""}. Vorgeschlagen werden die drei Stadtteile mit der meisten solchen Fläche; ihre Blöcke sind auf der Karte rot umrandet. Ändert sich mit den Reglern.`}
+              </p>
+            </PopoverContent>
+          </Popover>
+        </div>
         {top.length > 0 ? (
           <p className="mt-1 text-lg font-bold">
             {en ? "Suggested: grow outwards at the city edge near " : "Empfehlung: Stadt nach außen erweitern bei "}
@@ -96,11 +108,6 @@ export function FutureDevelopmentPlans() {
         ) : (
           <p className="mt-1 text-lg font-bold">{en ? "No edge area is suitable with these settings" : "Mit diesen Einstellungen ist kein Stadtrand-Bereich geeignet"}</p>
         )}
-        <p className="mt-1 text-xs text-muted-foreground">
-          {en
-            ? `Only blocks on the city edge count. A block qualifies if it meets all conditions above${features.fnp ? " or holds still-unbuilt housing land from the land-use plan (both after exclusions)" : ""}. The three districts with the most such area are suggested and their blocks outlined in red on the map. Changes with the sliders.`
-            : `Gezählt werden nur Blöcke am Stadtrand. Ein Block zählt, wenn er alle Bedingungen oben erfüllt${features.fnp ? " oder noch unbebaute Wohnbaufläche aus dem Flächennutzungsplan enthält (beides nach Abzug der Ausschlussflächen)" : ""}. Vorgeschlagen werden die drei Stadtteile mit der meisten solchen Fläche; ihre Blöcke sind auf der Karte rot umrandet. Ändert sich mit den Reglern.`}
-        </p>
       </div>
     </section>
   );
