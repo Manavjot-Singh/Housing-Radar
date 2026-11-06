@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { FutureDevelopmentMap } from "@/components/FutureDevelopmentMap";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, edgeSuggestions, type Thresholds } from "@/lib/future";
 import { useLang } from "@/lib/i18n";
 import { features } from "@/lib/radar";
@@ -39,13 +40,21 @@ export function FutureDevelopmentPlans() {
       <h2 id="future-development-title" className="mt-1 text-3xl font-bold uppercase">
         {en ? "Future Development Plans" : "Future Development Plans · Zukünftige Entwicklung"}
       </h2>
-      <p className="mt-2 max-w-4xl text-sm text-muted-foreground">
-        {en
-          ? `Search areas on ~500 m blocks: high housing pressure (little living space, low vacancy)${features.coverage ? " combined with little building on the remaining land" : ""}.${exclText ? ` Subtracted first: ${exclText}; farmland stays (it is where new housing areas are usually zoned).` : ""}${features.fnp ? " Blue dashed areas are housing or mixed land in the city land-use plan (Flächennutzungsplan) that is still unbuilt." : ""} Move the sliders – the map recalculates instantly, so you can see how stable a result is.`
-          : `Suchräume auf ~500-m-Blöcken: hoher Wohnungsdruck (wenig Wohnfläche, wenig Leerstand)${features.coverage ? " und wenig Bebauung auf der verbleibenden Fläche" : ""}.${exclText ? ` Vorher abgezogen werden ${exclText}; Ackerflächen bleiben (dort werden neue Baugebiete meist ausgewiesen).` : ""}${features.fnp ? " Blau gestrichelt: im Flächennutzungsplan ausgewiesene Wohn- oder Mischbauflächen, die noch unbebaut sind." : ""} Verschiebe die Regler – die Karte rechnet sofort neu, so siehst du, wie stabil ein Ergebnis ist.`}
-      </p>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <span>{en ? "Thresholds" : "Grenzwerte"}</span>
+        <Popover>
+          <PopoverTrigger aria-label={en ? "How to use the sliders" : "So nutzt du die Regler"}
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-muted-foreground font-mono text-[10px] leading-none hover:border-primary hover:text-primary">i</PopoverTrigger>
+          <PopoverContent className="w-80 text-sm">
+            <p className="mb-1 font-semibold">{en ? "Why three sliders?" : "Warum drei Regler?"}</p>
+            <p className="text-muted-foreground">{en
+              ? "A block turns green only if it meets all conditions: little living space per resident and low vacancy mean housing is scarce there; little building on the remaining land means there is room to build. Move a slider to tighten or loosen a condition – if a block stays green over a wide range, it is a robust result; if it flips quickly, treat it with caution. Reset restores the defaults."
+              : "Ein Block wird nur grün, wenn er alle Bedingungen erfüllt: wenig Wohnfläche je Einwohner und wenig Leerstand zeigen knappen Wohnraum; wenig Bebauung auf der Restfläche zeigt, dass Platz zum Bauen da ist. Verschiebe einen Regler, um eine Bedingung strenger oder lockerer zu machen – bleibt ein Block über einen weiten Bereich grün, ist das Ergebnis stabil; kippt er schnell, mit Vorsicht betrachten. „Zurücksetzen“ stellt die Standardwerte wieder her."}</p>
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="mt-2 grid gap-4 sm:grid-cols-3">
         {sliders.map((s) => (
           <label key={s.key} className="block text-sm">
             <span className="flex justify-between gap-2"><span>{s.label}</span><b>{s.show}</b></span>
