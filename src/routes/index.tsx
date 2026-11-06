@@ -190,7 +190,7 @@ function Index() {
           <p className="mb-3 max-w-3xl text-sm text-muted-foreground">{hint}</p>
         ) : null}
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
+        <div className="grid gap-4 lg:grid-cols-[1fr_380px] lg:grid-rows-[auto_1fr]">
           <div className="relative h-[480px] overflow-hidden rounded-md border lg:h-[620px]">
             <RadarMap lang={lang} conditions={conditions} showGrid={showGrid} amenities={amenities} selected={selected} onSelect={setSelected} />
             <div className="pointer-events-none absolute bottom-3 left-3 z-[400] rounded-sm border bg-card/95 p-2 text-xs">
@@ -233,7 +233,7 @@ function Index() {
             </div>
           </div>
 
-          <aside className="flex flex-col gap-4">
+          <aside className={`flex flex-col gap-4 lg:col-start-2 lg:row-start-1 ${single ? "lg:row-span-2" : ""}`}>
             {sel && (
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker">{tx.district}</p>
@@ -268,21 +268,6 @@ function Index() {
               </section>
             )}
 
-            {(sel || analysis) && (
-              <section className="rounded-md border bg-card p-4">
-                <p className="kicker">{tx.whatToDo}{sel ? ` · ${sel.name}` : ""}</p>
-                {sel && <p className="mt-1 text-xs text-muted-foreground">{tx.ideasBasis}</p>}
-                <ul className="mt-2 space-y-2">
-                  {analysis && (
-                    <li className="border-l-2 border-primary pl-3 text-sm"><strong>{analysis[lang].title}:</strong> {analysis[lang].action}</li>
-                  )}
-                  {sel && recommend(toProfile(sel), cityRef).map((i) => (
-                    <li key={i.id} className="border-l-2 border-primary pl-3 text-sm"><strong>{i[lang].title}:</strong> {i[lang].text}</li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
             {single && (
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker mb-2">{tx.ranking} · {L(single)}</p>
@@ -306,6 +291,21 @@ function Index() {
               </section>
             )}
           </aside>
+
+          {(sel || analysis) && (
+            <section className={`rounded-md border bg-card p-4 lg:row-start-2 ${single ? "lg:col-start-1" : "lg:col-span-2"}`}>
+              <p className="kicker">{tx.whatToDo}{sel ? ` · ${sel.name}` : ""}</p>
+              {sel && <p className="mt-1 text-xs text-muted-foreground">{tx.ideasBasis}</p>}
+              <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                {analysis && (
+                  <li className="border-l-2 border-primary pl-3 text-sm"><strong>{analysis[lang].title}:</strong> {analysis[lang].action}</li>
+                )}
+                {sel && recommend(toProfile(sel), cityRef).map((i) => (
+                  <li key={i.id} className="border-l-2 border-primary pl-3 text-sm"><strong>{i[lang].title}:</strong> {i[lang].text}</li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
         <FutureDevelopmentPlans />
       </main>

@@ -22,10 +22,16 @@ export function FutureDevelopmentPlans() {
   const names = top.map((s) => `${s.district} (${fmt(s.ha)} ha)`).join(", ");
   const districts = [...new Set(hits.map((b) => b.d))].sort();
 
-  const sliders: { key: "living" | "vacancy" | "coverage"; label: string; min: number; max: number; step: number; show: string }[] = [
-    { key: "living" as const, label: en ? "Living space per resident below" : "Wohnfläche je Einwohner unter", min: 30, max: 70, step: 1, show: `${t.living} m²` },
-    { key: "vacancy" as const, label: en ? "Vacancy at most" : "Leerstand höchstens", min: 0, max: 25, step: 0.5, show: `${t.vacancy} %` },
-    { key: "coverage" as const, label: en ? "Building coverage at most" : "Bebauung höchstens", min: 1, max: 40, step: 1, show: `${t.coverage} %` },
+  const sliders: { key: "living" | "vacancy" | "coverage"; label: string; info: string; min: number; max: number; step: number; show: string }[] = [
+    { key: "living" as const, label: en ? "Living space per resident below" : "Wohnfläche je Einwohner unter",
+      info: en ? "Little space per person signals housing pressure. Raise it to include more blocks, lower it to keep only the tightest areas." : "Wenig Fläche pro Person zeigt Wohnungsdruck. Höher nimmt mehr Blöcke auf, niedriger lässt nur die engsten Gebiete übrig.",
+      min: 30, max: 70, step: 1, show: `${t.living} m²` },
+    { key: "vacancy" as const, label: en ? "Vacancy at most" : "Leerstand höchstens",
+      info: en ? "Few empty homes mean existing housing can't absorb demand. Raise it to allow blocks with more empty homes." : "Wenig leere Wohnungen heißt, der Bestand fängt die Nachfrage nicht auf. Höher lässt auch Blöcke mit mehr Leerstand zu.",
+      min: 0, max: 25, step: 0.5, show: `${t.vacancy} %` },
+    { key: "coverage" as const, label: en ? "Building coverage at most" : "Bebauung höchstens",
+      info: en ? "Little building on the remaining land means there is room to build. Raise it to include more built-up blocks." : "Wenig Bebauung auf der Restfläche heißt, es gibt Platz zum Bauen. Höher nimmt auch dichter bebaute Blöcke auf.",
+      min: 1, max: 40, step: 1, show: `${t.coverage} %` },
   ].filter((s) => features.coverage || s.key !== "coverage");
 
 
@@ -36,23 +42,20 @@ export function FutureDevelopmentPlans() {
         {en ? "Future Development Plans" : "Future Development Plans · Zukünftige Entwicklung"}
       </h2>
 
-      <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-        <span>{en ? "Thresholds" : "Grenzwerte"}</span>
-        <Popover>
-          <PopoverTrigger aria-label={en ? "How to use the sliders" : "So nutzt du die Regler"}
-            className={INFO_BUTTON}>i</PopoverTrigger>
-          <PopoverContent className="w-80 text-sm">
-            <p className="mb-1 font-semibold">{en ? "Why three sliders?" : "Warum drei Regler?"}</p>
-            <p className="text-muted-foreground">{en
-              ? "A block turns green only if it meets all conditions: little living space per resident and low vacancy mean housing is scarce there; little building on the remaining land means there is room to build. Move a slider to tighten or loosen a condition – if a block stays green over a wide range, it is a robust result; if it flips quickly, treat it with caution. Reset restores the defaults."
-              : "Ein Block wird nur grün, wenn er alle Bedingungen erfüllt: wenig Wohnfläche je Einwohner und wenig Leerstand zeigen knappen Wohnraum; wenig Bebauung auf der Restfläche zeigt, dass Platz zum Bauen da ist. Verschiebe einen Regler, um eine Bedingung strenger oder lockerer zu machen – bleibt ein Block über einen weiten Bereich grün, ist das Ergebnis stabil; kippt er schnell, mit Vorsicht betrachten. „Zurücksetzen“ stellt die Standardwerte wieder her."}</p>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <p className="mt-4 text-sm text-muted-foreground">{en ? "Thresholds" : "Grenzwerte"}</p>
       <div className="mt-2 grid gap-4 sm:grid-cols-3">
         {sliders.map((s) => (
           <label key={s.key} className="block text-sm">
-            <span className="flex justify-between gap-2"><span>{s.label}</span><b>{s.show}</b></span>
+            <span className="flex justify-between gap-2">
+              <span className="flex items-center gap-1.5">
+                {s.label}
+                <Popover>
+                  <PopoverTrigger aria-label={`${en ? "About" : "Info zu"}: ${s.label}`} className={`${INFO_BUTTON} shrink-0`}>i</PopoverTrigger>
+                  <PopoverContent className="w-64 text-sm text-muted-foreground">{s.info}</PopoverContent>
+                </Popover>
+              </span>
+              <b className="whitespace-nowrap">{s.show}</b>
+            </span>
             <Slider className="mt-2" min={s.min} max={s.max} step={s.step} value={[t[s.key]]}
               onValueChange={([v]) => setT((p) => ({ ...p, [s.key]: v }))} aria-label={s.label} />
           </label>
