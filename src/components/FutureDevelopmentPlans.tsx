@@ -7,6 +7,8 @@ import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, edgeSuggestions, type Thres
 import { useLang } from "@/lib/i18n";
 import { features } from "@/lib/radar";
 
+const INFO_BUTTON = "inline-flex h-4 w-4 items-center justify-center rounded-full border border-muted-foreground font-mono text-[10px] leading-none hover:border-primary hover:text-primary";
+
 export function FutureDevelopmentPlans() {
   const [lang] = useLang();
   const en = lang === "en";
@@ -38,7 +40,7 @@ export function FutureDevelopmentPlans() {
         <span>{en ? "Thresholds" : "Grenzwerte"}</span>
         <Popover>
           <PopoverTrigger aria-label={en ? "How to use the sliders" : "So nutzt du die Regler"}
-            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-muted-foreground font-mono text-[10px] leading-none hover:border-primary hover:text-primary">i</PopoverTrigger>
+            className={INFO_BUTTON}>i</PopoverTrigger>
           <PopoverContent className="w-80 text-sm">
             <p className="mb-1 font-semibold">{en ? "Why three sliders?" : "Warum drei Regler?"}</p>
             <p className="text-muted-foreground">{en
@@ -66,6 +68,19 @@ export function FutureDevelopmentPlans() {
           {en ? "Only blocks with housing land in the land-use plan" : "Nur Blöcke mit Wohnbaufläche im Flächennutzungsplan"}
         </label>}
         <Button variant="outline" size="sm" onClick={() => setT(DEFAULT_THRESHOLDS)}>{en ? "Reset" : "Zurücksetzen"}</Button>
+        <span className="flex items-center gap-2 text-muted-foreground">
+          {en ? "How to read the map" : "So liest du die Karte"}
+          <Popover>
+            <PopoverTrigger aria-label={en ? "How to read the map" : "So liest du die Karte"} className={INFO_BUTTON}>i</PopoverTrigger>
+            <PopoverContent className="w-96 max-w-[calc(100vw-2rem)] text-sm">
+              <p className="text-muted-foreground">
+                {en
+                  ? `Green = all conditions met; hover any block to see ✔/✘ per condition and what was subtracted. Where the census hides a block's value for privacy, the district value is used and marked.${features.coverage ? " Building coverage comes from OpenStreetMap footprints and refers to the land left after exclusions." : ""} These are search areas, not buildable plots: zoning, ownership, Natura 2000 and infrastructure are not checked – confirm every site in the Geoportal and binding plans.`
+                  : `Grün = alle Bedingungen erfüllt; beim Überfahren zeigt jeder Block ✔/✘ je Bedingung und was abgezogen wurde. Wo der Zensus den Blockwert aus Datenschutzgründen verbirgt, gilt der Stadtteilwert (markiert).${features.coverage ? " Die Bebauung stammt aus OpenStreetMap-Gebäudeumrissen und bezieht sich auf die Fläche nach Abzug." : ""} Das sind Suchräume, keine Baugrundstücke: Bauleitplanung, Eigentum, Natura 2000 und Infrastruktur sind nicht geprüft – jeden Standort im Geoportal und anhand der verbindlichen Pläne kontrollieren.`}
+              </p>
+            </PopoverContent>
+          </Popover>
+        </span>
       </div>
 
       <div className="mt-3 overflow-hidden rounded-md border">
@@ -87,11 +102,6 @@ export function FutureDevelopmentPlans() {
             : `Gezählt werden nur Blöcke am Stadtrand. Ein Block zählt, wenn er alle Bedingungen oben erfüllt${features.fnp ? " oder noch unbebaute Wohnbaufläche aus dem Flächennutzungsplan enthält (beides nach Abzug der Ausschlussflächen)" : ""}. Vorgeschlagen werden die drei Stadtteile mit der meisten solchen Fläche; ihre Blöcke sind auf der Karte rot umrandet. Ändert sich mit den Reglern.`}
         </p>
       </div>
-      <p className="mt-3 border-l-2 border-primary bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-        {en
-          ? `Green = all conditions met; hover any block to see ✔/✘ per condition and what was subtracted. Where the census hides a block's value for privacy, the district value is used and marked.${features.coverage ? " Building coverage comes from OpenStreetMap footprints and refers to the land left after exclusions." : ""} These are search areas, not buildable plots: zoning, ownership, Natura 2000 and infrastructure are not checked – confirm every site in the Geoportal and binding plans.`
-          : `Grün = alle Bedingungen erfüllt; beim Überfahren zeigt jeder Block ✔/✘ je Bedingung und was abgezogen wurde. Wo der Zensus den Blockwert aus Datenschutzgründen verbirgt, gilt der Stadtteilwert (markiert).${features.coverage ? " Die Bebauung stammt aus OpenStreetMap-Gebäudeumrissen und bezieht sich auf die Fläche nach Abzug." : ""} Das sind Suchräume, keine Baugrundstücke: Bauleitplanung, Eigentum, Natura 2000 und Infrastruktur sind nicht geprüft – jeden Standort im Geoportal und anhand der verbindlichen Pläne kontrollieren.`}
-      </p>
     </section>
   );
 }
