@@ -26,13 +26,6 @@ export function FutureDevelopmentPlans() {
     { key: "coverage" as const, label: en ? "Building coverage at most" : "Bebauung höchstens", min: 1, max: 40, step: 1, show: `${t.coverage} %` },
   ].filter((s) => features.coverage || s.key !== "coverage");
 
-  // The text names only the exclusions and the plan data this city really has.
-  const excl: [boolean, string, string][] = [
-    [features.nature, "nature reserves, landscape protection areas", "Naturschutzgebiete, Landschaftsschutzgebiete"],
-    [features.flood, "flood zones", "Überschwemmungsgebiete"],
-    [features.landuse, "forests, cemeteries, allotments, car parks and parks/sports grounds", "Wald, Friedhöfe, Kleingärten, Parkplätze sowie Parks und Sportflächen"],
-  ];
-  const exclText = excl.filter(([on]) => on).map(([, e, d]) => (en ? e : d)).join(en ? ", " : ", ");
 
   return (
     <section className="mt-10 rounded-md border bg-card p-4 sm:p-6" aria-labelledby="future-development-title">
