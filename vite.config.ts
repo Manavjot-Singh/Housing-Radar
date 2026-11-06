@@ -14,7 +14,7 @@ function datasetTool() {
     name: "local-dataset-tool",
     apply: "serve" as const,
     configureServer(server: { httpServer?: { once(e: string, f: () => void): void } | null }) {
-      if (process.env.LOVABLE_SANDBOX || process.env.DEV_SERVER__PROJECT_PATH || !existsSync("scripts/dataset_wizard.py")) return;
+      if (process.env["LOVABLE_SANDBOX"] || process.env["DEV_SERVER__PROJECT_PATH"] || !existsSync("scripts/dataset_wizard.py")) return;
       const start = (cmd: string, fallback?: string) => {
         const p: ChildProcess = spawn(cmd, ["scripts/dataset_wizard.py"], { stdio: "ignore", windowsHide: true });
         p.on("error", () => { if (fallback) start(fallback); });
