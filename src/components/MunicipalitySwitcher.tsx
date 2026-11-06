@@ -7,13 +7,17 @@ const TOOL = "http://127.0.0.1:8770";
 
 /**
  * Developer tool: search any German municipality and rebuild the dashboard for it. The local tool
- * behind it runs scripts on this machine, so the button exists only on the dev server.
+ * behind it runs scripts on this machine, so the button appears only on a dev server opened from
+ * this machine. Lovable's preview is a dev server too, but the tool can never be reached from it.
  */
 export function MunicipalitySwitcher() {
   const [lang] = useLang();
   const en = lang === "en";
+  const [local, setLocal] = useState(false);
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState<boolean | null>(null);
+
+  useEffect(() => setLocal(["localhost", "127.0.0.1"].includes(window.location.hostname)), []);
 
   useEffect(() => {
     if (!open) return;
@@ -31,6 +35,8 @@ export function MunicipalitySwitcher() {
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, []);
+
+  if (!local) return null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "dev", "--port", "5174", "--strictPort"],
+      "port": 5174
+    },
+    {
+      "name": "version-b-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../claude-version-b", "run", "dev", "--", "--port", "5175", "--strictPort"],
+      "port": 5175
+    }
+  ]
+}
