@@ -279,7 +279,7 @@ function Dashboard() {
             {(sel || analysis) && (
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker">{tx.whatToDo}{sel ? ` · ${sel.name}` : ""}</p>
-                {sel && <p className="mt-1 text-xs text-muted-foreground">{tx.ideasBasis}</p>}
+                {sel && <p className="mt-1 text-xs text-muted-foreground">{cityName === "Lüneburg" ? tx.ideasBasis : tx.ideasBasis.replace("zum Lüneburger Schnitt", `zum Schnitt von ${cityName}`).replace("the Lüneburg average", `the ${cityName} average`)}</p>}
                 <ul className="mt-2 space-y-2">
                   {analysis && (
                     <li className="border-l-2 border-primary pl-3 text-sm"><strong>{analysis[lang].title}:</strong> {analysis[lang].action}</li>
