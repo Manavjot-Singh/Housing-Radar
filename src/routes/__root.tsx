@@ -1,3 +1,4 @@
+import stadt from "@/data/stadt.json";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -78,8 +79,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Housing Radar Lüneburg" },
-      { name: "description", content: "Wo ist Wohnraum in Lüneburg knapp oder ungenutzt?" },
+      { title: `Housing Radar ${stadt.name}` },
+      { name: "description", content: `Wo ist Wohnraum in ${stadt.name} knapp oder ungenutzt?` },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import "leaflet/dist/leaflet.css";
 import { evaluate, futureBlocks, type Check, type ExclKey, type Thresholds } from "@/lib/future";
+import { city, features } from "@/lib/radar";
 
 const EXCL_LABEL: Record<ExclKey, { de: string; en: string }> = {
   nsg: { de: "Naturschutzgebiet", en: "Nature reserve" },
@@ -56,9 +57,9 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
         `<b>${blk.d}</b> · ${e.pass ? (en ? "matches all conditions" : "erfüllt alle Bedingungen") : (en ? "does not match" : "erfüllt nicht alle")}`,
         line(e.living, en ? "Living space" : "Wohnfläche", en ? "m²/resident" : "m²/Einw.", `< ${th.living}`, en),
         line(e.vacancy, en ? "Vacancy" : "Leerstand", "%", `≤ ${th.vacancy}`, en),
-        line(e.coverage, en ? "Building coverage" : "Bebauung", "%", `≤ ${th.coverage}`, en),
+        features.coverage ? line(e.coverage, en ? "Building coverage" : "Bebauung", "%", `≤ ${th.coverage}`, en) : "",
         `${en ? "Remaining area" : "Verbleibende Fläche"}: ${num(blk.freeHa, en)} ha`,
-        `${en ? "Land-use plan (FNP) housing/mixed land" : "Im Flächennutzungsplan Wohn-/Mischbaufläche"}: ${num(blk.fnpHa, en)} ha${blk.resHa ? ` · ${en ? "still unbuilt" : "davon noch unbebaut"}: ${num(blk.resHa, en)} ha` : ""}`,
+        features.fnp ? `${en ? "Land-use plan (FNP) housing/mixed land" : "Im Flächennutzungsplan Wohn-/Mischbaufläche"}: ${num(blk.fnpHa, en)} ha${blk.resHa ? ` · ${en ? "still unbuilt" : "davon noch unbebaut"}: ${num(blk.resHa, en)} ha` : ""}` : "",
         blk.farmPct ? `${en ? "Farmland share" : "Anteil Acker"}: ${blk.farmPct} %` : "",
         excl ? `${en ? "Excluded" : "Abgezogen"}: ${excl}` : "",
       ].filter(Boolean).join("<br>");
@@ -72,9 +73,9 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
     import("leaflet").then((mod) => {
       if (cancelled || !el.current) return;
       const L = (mod.default ?? mod) as typeof import("leaflet");
-      map = L.map(el.current, { zoomControl: true, renderer: L.svg() }).setView([53.245, 10.41], 12);
+      map = L.map(el.current, { zoomControl: true, renderer: L.svg() }).setView(city.center, 12);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap-Mitwirkende · Zensus 2022 · NLWKN",
+        attribution: `© OpenStreetMap-Mitwirkende · Zensus 2022${city.state === "Niedersachsen" ? " · NLWKN" : ""}`,
         maxZoom: 19,
       }).addTo(map);
       const fc = {
@@ -85,7 +86,7 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
       const rfc = { type: "FeatureCollection", features: futureBlocks.flatMap((b) => (b.rg ? [{ type: "Feature", geometry: b.rg, properties: {} }] : [])) };
       L.geoJSON(rfc as never, { interactive: false, style: { color: "#1d4ed8", weight: 1.5, dashArray: "4 3", fillColor: "#3b82f6", fillOpacity: 0.45 } }).addTo(map);
       const bb = layerRef.current.getBounds();
-      map.fitBounds(bb, { padding: [10, 10] });
+      if (bb.isValid()) map.fitBounds(bb, { padding: [10, 10] }); // a place can have no land left after exclusions
       restyle();
     });
     return () => { cancelled = true; map?.remove(); layerRef.current = null; };
@@ -110,7 +111,7 @@ export function FutureDevelopmentMap({ lang, t, focus }: { lang: "de" | "en"; t:
       en: "Suggested edge area · does not meet all conditions",
       onlyWithFocus: true,
     },
-    { swatch: { background: "rgba(59,130,246,.45)", border: "1px dashed #1d4ed8" }, de: "Wohnbaufläche im Flächennutzungsplan, noch unbebaut", en: "Housing land in the land-use plan, still unbuilt" },
+    ...(features.fnp ? [{ swatch: { background: "rgba(59,130,246,.45)", border: "1px dashed #1d4ed8" }, de: "Wohnbaufläche im Flächennutzungsplan, noch unbebaut", en: "Housing land in the land-use plan, still unbuilt" }] : []),
     { swatch: { background: "rgba(148,163,184,.08)", border: "1px solid #64748b" }, de: "Erfüllt die Bedingungen nicht", en: "Does not meet the conditions" },
   ];
 

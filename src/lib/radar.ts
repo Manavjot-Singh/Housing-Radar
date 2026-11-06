@@ -2,8 +2,24 @@ import blocke from "@/data/blocke.json";
 import gitter from "@/data/gitter.json";
 import gewerbe from "@/data/gewerbe.json";
 import stadtteile from "@/data/stadtteile.json";
+import stadt from "@/data/stadt.json";
 import summary from "@/data/summary.json";
 import type { FeatureCollection, Geometry } from "geojson";
+
+/** Datasets a city may lack. Without one, only the features built on it are hidden. */
+export type FeatureKey = "amenities" | "buildings" | "coverage" | "landuse" | "nature" | "flood" | "fnp" | "commercial";
+
+/** Everything city-specific; written by scripts/build_municipality.py. Null lists keep the built-in Lüneburg texts. */
+export type CityConfig = {
+  name: string; ags: string; state: string; labelDe: string; labelEn: string; avgDe: string; avgLongDe: string;
+  datasetsDe: string; datasetsEn: string; center: [number, number]; defaultDistrict: string; commercialDistrict: string | null;
+  partnerDe: string; partnerEn: string; officialBuildings: boolean; breaks: Partial<Record<string, number[]>>;
+  thresholds: { living?: number; vacancy?: number };
+  features: Record<FeatureKey, boolean>;
+  sources: Source[] | null; limits: { de: string[]; en: string[] } | null; steps: { de: string[][]; en: string[][] } | null;
+};
+export const city = stadt as unknown as CityConfig;
+export const features = city.features;
 
 export type District = {
   name: string;
@@ -39,11 +55,13 @@ export const geo = stadtteile as unknown as FeatureCollection<Geometry, District
 export type CommercialStreet = [string, number, number, number, number, number, number];
 export const commercial = gewerbe as unknown as CommercialStreet[];
 /** The LeAn extract only covers Altstadt shopping streets; elsewhere commercial vacancy is unknown, not zero. */
-export const COMMERCIAL_DISTRICT = "Altstadt";
+export const COMMERCIAL_DISTRICT = city.commercialDistrict ?? "";
+export const hasCommercial = features.commercial && commercial.length > 0;
 const commercialTotal = commercial.reduce((s, x) => s + x[4] + x[5], 0);
 
+const M_PER_LON = 111200 * Math.cos((city.center[0] * Math.PI) / 180);
 function metres(lon1: number, lat1: number, lon2: number, lat2: number) {
-  const dx = (lon1 - lon2) * 66600, dy = (lat1 - lat2) * 111200;
+  const dx = (lon1 - lon2) * M_PER_LON, dy = (lat1 - lat2) * 111200;
   return Math.sqrt(dx * dx + dy * dy);
 }
 /** Vacant + at-risk commercial units within `radius` m, or null outside the area the extract covers. */
@@ -135,6 +153,13 @@ export const indicators: Record<
     hint: "Einwohner geteilt durch die amtlich erfassten Gebäude – hohe Werte stehen für Mehrfamilienhäuser, niedrige für Einzelfamilienhäuser.",
   },
 };
+
+// Colour classes follow the city's own value range; the numbers above are Lüneburg's.
+for (const [k, b] of Object.entries(city.breaks)) if (b) indicators[k as Indicator].breaks = b;
+if (!city.officialBuildings) {
+  indicators.einwohnerJeGebaeude.hint = "Einwohner geteilt durch die in OpenStreetMap kartierten Gebäude – hohe Werte stehen für Mehrfamilienhäuser, niedrige für Einzelfamilienhäuser.";
+  indicators.einwohnerJeGebaeude.hintEn = "Residents divided by buildings mapped in OpenStreetMap – high values mean apartment blocks, low values single-family homes.";
+}
 
 /** Returns the scale class 1..5 (0 = no data). */
 export function scaleClass(value: number | null, ind: Indicator): number {
@@ -275,7 +300,7 @@ export type Analysis = {
   en: { title: string; question: string; action: string };
 };
 
-export const analyses: Analysis[] = [
+const allAnalyses: Analysis[] = [
   {
     id: "leerstand-versorgung",
     conditions: [{ ind: "leerstandsquote", dir: "high" }, { ind: "versorgung", dir: "low" }],
@@ -295,6 +320,14 @@ export const analyses: Analysis[] = [
     en: { title: "Housing and commercial vacancy", question: "Where are dwellings empty and shops or commercial units too?", action: "Reduce commercial vacancy: open empty shops for community projects, pop-ups or conversion to flats – a lively street makes the homes above attractive again." },
   },
 ];
+
+const NEEDS: Partial<Record<Indicator, boolean>> = {
+  versorgung: features.amenities, gewerbeLeerstand: hasCommercial, bebautAnteil: features.buildings, einwohnerJeGebaeude: features.buildings,
+};
+/** False when the dataset behind an indicator is missing, or the census publishes nothing for it here (small places). */
+export const indicatorAvailable = (k: Indicator) => NEEDS[k] !== false && (k === "gewerbeLeerstand" || districts.some((d) => d[k] != null));
+/** Analyses are hidden only when one of their conditions has no data here. */
+export const analyses = allAnalyses.filter((a) => a.conditions.every((c) => indicatorAvailable(c.ind)));
 
 function num(x: number, decimals: number) {
   return x.toLocaleString(loc, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
@@ -327,20 +360,20 @@ export function verdict(d: District, lang: "de" | "en" = "de"): string {
   if (lang === "en") {
     if (d.wohnflaecheProKopf == null) return "Not enough data.";
     const a = d.abweichung ?? 0;
-    if (a >= 10) return `Comparatively few people live on a lot of space here: ${a.toFixed(0)} % more per person than the Lüneburg average. A starting point for advice on home swaps, conversions or granny flats.`;
+    if (a >= 10) return `Comparatively few people live on a lot of space here: ${a.toFixed(0)} % more per person than the ${city.name} average. A starting point for advice on home swaps, conversions or granny flats.`;
     if (a <= -7) return `Living space is scarce here: ${Math.abs(a).toFixed(0)} % less space per person than average. New housing or densification nearby would relieve pressure.`;
-    return "Living space per person is close to the Lüneburg average.";
+    return `Living space per person is close to the ${city.name} average.`;
   }
   if (d.wohnflaecheProKopf == null) return "Keine ausreichenden Daten.";
   const a = d.abweichung ?? 0;
-  if (a >= 10) return `Hier leben vergleichsweise wenige Menschen auf viel Wohnfläche: ${a.toFixed(0)} % mehr pro Kopf als im Lüneburger Schnitt. Ansatzpunkt für Beratung zu Wohnungstausch, Umbau oder Einliegerwohnungen.`;
+  if (a >= 10) return `Hier leben vergleichsweise wenige Menschen auf viel Wohnfläche: ${a.toFixed(0)} % mehr pro Kopf als im ${city.avgDe}. Ansatzpunkt für Beratung zu Wohnungstausch, Umbau oder Einliegerwohnungen.`;
   if (a <= -7) return `Hier ist Wohnraum knapp: ${Math.abs(a).toFixed(0)} % weniger Fläche pro Kopf als im Schnitt. Neubau oder Verdichtung in der Umgebung würde hier entlasten.`;
-  return "Die Wohnfläche pro Kopf liegt nahe am Lüneburger Durchschnitt.";
+  return `Die Wohnfläche pro Kopf liegt nahe am ${city.avgLongDe}.`;
 }
 
 export type Source = { en: { name: string; content: string; level: string; status: string }; name: string; publisher: string; content: string; level: string; licence: string; status: string; url: string };
 
-export const sources: Source[] = [
+const builtInSources: Source[] = [
   { en: { name: "Census 2022 – Population", content: "Residents per grid cell", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Bevölkerungszahl", publisher: "Statistisches Bundesamt", content: "Einwohner je Gitterzelle", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { en: { name: "Census 2022 – Average living space per resident", content: "m² living space per resident", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Durchschnittliche Wohnfläche je Bewohner", publisher: "Statistisches Bundesamt", content: "m² Wohnfläche pro Bewohner", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
   { en: { name: "Census 2022 – Vacancy rate", content: "Share of vacant dwellings – housing only, commercial space (shops, offices) not included", level: "100 m grid (EPSG:3035)", status: "Reference date 15 May 2022" }, name: "Zensus 2022 – Leerstandsquote", publisher: "Statistisches Bundesamt", content: "Anteil leerstehender Wohnungen – nur Wohnraum, Gewerbe (Läden, Büros) ist nicht enthalten", level: "100-m-Gitter (EPSG:3035)", licence: "Datenlizenz Deutschland – Namensnennung 2.0", status: "Stichtag 15.05.2022", url: "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html" },
@@ -357,5 +390,7 @@ export const sources: Source[] = [
   { en: { name: "OpenStreetMap – forests, cemeteries, allotments, car parks, parks, land use, buildings", content: "Forests, cemeteries, allotments, car parks and parks/sports subtracted; farmland and other unbuilt land use mark undeveloped plan land; building footprints give the coverage of the remaining land per block", level: "Polygons, aggregated to ~500 m blocks", status: "Overpass extract 5 Nov 2026" }, name: "OpenStreetMap – Wald, Friedhöfe, Kleingärten, Parkplätze, Parks, Landnutzung, Gebäude", publisher: "OpenStreetMap-Mitwirkende", content: "Wald, Friedhöfe, Kleingärten, Parkplätze und Parks/Sport abgezogen; Acker und andere unbebaute Landnutzung zeigen noch unbebaute Planflächen; Gebäudeumrisse ergeben die Bebauung der verbleibenden Fläche je Block", level: "Polygone, auf ~500-m-Blöcke verdichtet", licence: "ODbL 1.0", status: "Overpass-Auszug 05.11.2026", url: "https://www.openstreetmap.org/copyright" },
   { en: { name: "Land-use plan Hansestadt Lüneburg (FNP, consolidated)", content: "Housing and mixed building land designated in the land-use plan, intersected with each block", level: "Polygons, aggregated to ~500 m blocks", status: "PlanDigital WFS, retrieved 5 Nov 2026" }, name: "Flächennutzungsplan Hansestadt Lüneburg (Zusammenzeichnung)", publisher: "Hansestadt Lüneburg / PlanDigital Niedersachsen", content: "Im Flächennutzungsplan ausgewiesene Wohn- und gemischte Bauflächen, je Block verschnitten", level: "Polygone, auf ~500-m-Blöcke verdichtet", licence: "siehe Metadaten (NUMIS)", status: "PlanDigital-WFS, abgerufen 05.11.2026", url: "https://numis.niedersachsen.de/trefferanzeige?docuuid=eb08dd5f-32a3-4866-aba2-272d0a8649bf" },
 ];
+
+export const sources: Source[] = city.sources ?? builtInSources;
 
 setAmenitySelection({});

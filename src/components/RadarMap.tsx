@@ -5,7 +5,7 @@ import gitter from "@/data/gitter.json";
 import versorgung from "@/data/versorgung.json";
 import { t } from "@/lib/i18n";
 import {
-  blockOf, blockOwn, commercial, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
+  blockOf, blockOwn, city, commercial, blockValueOf, cellOwn, cellValue, districtByName, geo, indicators, meets, scaleClass, value,
   type Cell, type Condition, type District, type Indicator,
 } from "@/lib/radar";
 
@@ -56,9 +56,9 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
       if (cancelled || !el.current || mapRef.current) return;
       const Lf = (mod.default ?? mod) as typeof L;
       libRef.current = Lf;
-      const map = Lf.map(el.current, { zoomControl: true, attributionControl: true }).setView([53.245, 10.41], 13);
+      const map = Lf.map(el.current, { zoomControl: true, attributionControl: true }).setView(city.center, 13);
       Lf.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap-Mitwirkende · Daten: Zensus 2022, Destatis; ALKIS, LGLN",
+        attribution: `© OpenStreetMap-Mitwirkende · Daten: Zensus 2022, Destatis${city.officialBuildings ? "; ALKIS" : ""}`,
         maxZoom: 19,
         opacity: 0.45,
       }).addTo(map);
@@ -188,7 +188,7 @@ export function RadarMap({ lang, conditions, showGrid, amenities, selected, onSe
 
   return (
     <div className="relative h-full w-full">
-      <div ref={el} className="h-full w-full" aria-label={lang === "en" ? "Map of Lüneburg districts" : "Karte der Lüneburger Stadtteile"} />
+      <div ref={el} className="h-full w-full" aria-label={lang === "en" ? `Map of ${city.name} districts` : `Karte der Stadtteile von ${city.name}`} />
       {unit && (
         <div className="pointer-events-none absolute right-2 top-2 z-[400] rounded-sm border bg-card/95 px-2 py-1 font-mono text-xs">
           {unit === "block" ? t[lang].showingBlock : t[lang].showingCell}

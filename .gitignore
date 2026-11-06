@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Built cities and uploads (may hold private files)
+/data/
+__pycache__/

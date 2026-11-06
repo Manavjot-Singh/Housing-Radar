@@ -1,10 +1,11 @@
+import { city } from "@/lib/radar";
 import { describe, expect, it } from "vitest";
 import { evaluate, futureBlocks, type FutureBlock } from "@/lib/future";
 
 const base: FutureBlock = { id: "X|1|1", d: "Bockelsberg", ew: 100, living: 45, vac: 8, cover: 6, freeHa: 10, fnpHa: 0, resHa: 0, farmPct: 0, rg: null, exclPct: 0, excl: {}, g: { type: "Point", coordinates: [0, 0] } };
 const t = { living: 50, vacancy: 11, coverage: 10, onlyPlanned: false };
 
-describe("future development screen", () => {
+describe.skipIf(city.name !== "Lüneburg")("future development screen", () => {
   it("passes a block under 50 m², at most 11 % vacancy, at most 10 % coverage", () => {
     expect(evaluate(base, t).pass).toBe(true);
   });
@@ -28,7 +29,7 @@ describe("future development screen", () => {
 });
 
 import { evaluate as ev2, futureBlocks as fb2 } from "@/lib/future";
-describe("land-use plan filter", () => {
+describe.skipIf(city.name !== "Lüneburg")("land-use plan filter", () => {
   it("only keeps blocks with plan housing land when ticked", () => {
     const loose = { living: 70, vacancy: 25, coverage: 40, onlyPlanned: true };
     const hits = fb2.filter((b) => ev2(b, loose).pass);

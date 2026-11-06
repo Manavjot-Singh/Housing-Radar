@@ -1,9 +1,10 @@
+import { city } from "@/lib/radar";
 import { describe, expect, it } from "vitest";
 
 import { analyses } from "@/lib/radar";
 
 // The user dropped three ready-made analyses; they must not come back.
-describe("Ready-made analyses", () => {
+describe.skipIf(city.name !== "Lüneburg")("Ready-made analyses", () => {
   const ids = analyses.map((a) => a.id);
 
   it("keeps the two analyses in scope plus housing + commercial vacancy", () => {

@@ -1,7 +1,8 @@
+import { city } from "@/lib/radar";
 import { describe, expect, it } from "vitest";
 import { blocks, blockValueOf, commercial, districts, meets } from "@/lib/radar";
 
-describe("Commercial vacancy (LeAn)", () => {
+describe.skipIf(city.name !== "Lüneburg")("Commercial vacancy (LeAn)", () => {
   it("counts 4 vacant and 4 at-risk units", () => {
     expect(commercial.reduce((s, x) => s + x[4], 0)).toBe(4);
     expect(commercial.reduce((s, x) => s + x[5], 0)).toBe(4);

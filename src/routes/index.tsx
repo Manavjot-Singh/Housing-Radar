@@ -7,7 +7,7 @@ import { useLang, t } from "@/lib/i18n";
 import { MetricInfo, type MetricKey } from "@/components/MetricInfo";
 import { recommend, type Profile } from "@/lib/recommendations";
 import {
-  analyses, thresholdText, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
+  analyses, city, features, indicatorAvailable, thresholdText, districts, fmt1, fmtAuto, fmtInt, fmtNum, formatValue, indicators, scaleClass, value, verdict,
   type Condition, type Dir, type Indicator,
   setAmenitySelection,
 } from "@/lib/radar";
@@ -15,10 +15,10 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Housing Radar Lüneburg – Wo ist Wohnraum knapp oder ungenutzt?" },
-      { name: "description", content: "Kombinierbare Kartenebenen zu Wohnfläche, Leerstand, Älteren, Gebäudetypen, Räumen und Versorgung in Lüneburg – mit fertigen Analysen gegen Wohnungsmangel." },
-      { property: "og:title", content: "Housing Radar Lüneburg" },
-      { property: "og:description", content: "Wo wird Wohnraum in Lüneburg ungleich genutzt? Offene Daten, kombinierbar, datenschutzkonform." },
+      { title: `Housing Radar ${city.name} – Wo ist Wohnraum knapp oder ungenutzt?` },
+      { name: "description", content: `Kombinierbare Kartenebenen zu Wohnfläche, Leerstand, Älteren, Gebäudetypen, Räumen und Versorgung in ${city.name} – mit fertigen Analysen gegen Wohnungsmangel.` },
+      { property: "og:title", content: `Housing Radar ${city.name}` },
+      { property: "og:description", content: `Wo wird Wohnraum in ${city.name} ungleich genutzt? Offene Daten, kombinierbar, datenschutzkonform.` },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 
 const swatch = ["bg-nodata", "bg-scale-1", "bg-scale-2", "bg-scale-3", "bg-scale-4", "bg-scale-5"];
 const dotVar: Record<AmenityKey, string> = { shop: "var(--scale-3)", doc: "var(--poi-doc)", pt: "var(--card)", bakery: "var(--poi-bakery)" };
-const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "gewerbeLeerstand", "bebautAnteil", "einwohnerJeGebaeude"];
+const layerOrder: Indicator[] = ["wohnflaecheProKopf", "leerstandsquote", "anteil65", "efhAnteil", "raeumeProKopf", "versorgung", "gewerbeLeerstand", "bebautAnteil", "einwohnerJeGebaeude"].filter((k) => indicatorAvailable(k as Indicator)) as Indicator[];
 function weighted(k: keyof Profile & keyof (typeof districts)[number]) {
   let s = 0, w = 0;
   for (const d of districts) { const v = d[k] as number | null; if (v != null) { s += v * d.einwohner; w += d.einwohner; } }
@@ -58,7 +58,7 @@ function Index() {
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [amenities, setAmenities] = useState<Record<AmenityKey, boolean>>({ shop: false, doc: false, pt: false, bakery: false });
-  const [selected, setSelected] = useState<string | null>("Wilschenbruch");
+  const [selected, setSelected] = useState<string | null>(city.defaultDistrict);
 
   const L = (k: Indicator) => (en ? indicators[k].labelEn : indicators[k].label);
   const unit = (k: Indicator) => (en && indicators[k].unit === "Pers." ? "ppl" : en && indicators[k].unit === "Obj." ? "units" : indicators[k].unit);
@@ -154,8 +154,8 @@ function Index() {
             })}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-2 text-sm">
-            <span className="text-muted-foreground">{tx.showPoints}:</span>
-            {(["shop", "bakery", "doc", "pt"] as AmenityKey[]).map((k) => (
+            {features.amenities && <span className="text-muted-foreground">{tx.showPoints}:</span>}
+            {features.amenities && (["shop", "bakery", "doc", "pt"] as AmenityKey[]).map((k) => (
               <label key={k} className="flex cursor-pointer items-center gap-1.5">
                 <input type="checkbox" checked={amenities[k]} onChange={(e) => setAmenities((a) => ({ ...a, [k]: e.target.checked }))} className="accent-primary" />
                 {tx.amenity[k]}
@@ -247,12 +247,15 @@ function Index() {
                   <div><dt className="text-muted-foreground">{tx.old}<MetricInfo k="old" lang={lang} label={tx.old} /></dt><dd className="font-display text-2xl font-semibold">{sel.anteil65 != null ? `${fmtAuto(sel.anteil65)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.efh}<MetricInfo k="efh" lang={lang} label={tx.efh} /></dt><dd className="font-display text-2xl font-semibold">{sel.efhAnteil != null ? `${Math.round(sel.efhAnteil)} %` : tx.noData}</dd></div>
                   <div><dt className="text-muted-foreground">{tx.rooms}<MetricInfo k="rooms" lang={lang} label={tx.rooms} /></dt><dd className="font-display text-2xl font-semibold">{sel.raeumeProKopf != null ? fmt1(sel.raeumeProKopf) : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${Math.round(sel.versorgung)} %` : tx.noData}</dd></div>
-                  <div><dt className="text-muted-foreground">{tx.density}<MetricInfo k="density" lang={lang} label={tx.density} /></dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>
+                  {features.amenities && <div><dt className="text-muted-foreground">{tx.amen}<MetricInfo k="amen" lang={lang} label={tx.amen} /></dt><dd className="font-display text-2xl font-semibold">{sel.versorgung != null ? `${Math.round(sel.versorgung)} %` : tx.noData}</dd></div>}
+                  {features.buildings && <div><dt className="text-muted-foreground">{tx.density}<MetricInfo k="density" lang={lang} label={tx.density} /></dt><dd className="font-display text-2xl font-semibold">{fmtAuto(sel.bebautAnteil)} %</dd></div>}
                   <div><dt className="text-muted-foreground">{tx.coverage}<MetricInfo k="coverage" lang={lang} label={tx.coverage} /></dt><dd className="font-medium">{sel.abdeckung} %</dd></div>
                 </dl>
 
                 <div className="mt-3 rounded-sm border bg-muted/50 p-3">
+                  {!features.buildings ? (
+                    <div className="text-center"><dt className="text-xs text-muted-foreground">{tx.residents}<MetricInfo k="residents" lang={lang} label={tx.residents} /></dt><dd className="font-display text-xl font-semibold">{sel.einwohner.toLocaleString(loc)}</dd></div>
+                  ) : <>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div><dt className="text-xs text-muted-foreground">{tx.residents}<MetricInfo k="residents" lang={lang} label={tx.residents} /></dt><dd className="font-display text-xl font-semibold">{sel.einwohner.toLocaleString(loc)}</dd></div>
                     <div><dt className="text-xs text-muted-foreground">{tx.buildings}<MetricInfo k="buildings" lang={lang} label={tx.buildings} /></dt><dd className="font-display text-xl font-semibold">{sel.gebaeude.toLocaleString(loc)}</dd></div>
@@ -261,6 +264,7 @@ function Index() {
                   <p className="mt-2 border-t pt-2 text-xs text-muted-foreground">
                     {tx.spread(fmtInt(sel.einwohner), fmtInt(sel.gebaeude), fmt1(sel.einwohnerJeGebaeude))}
                   </p>
+                  </>}
                 </div>
 
                 <p className="mt-3 border-l-2 border-primary pl-3 text-sm">{verdict(sel, lang)}</p>
@@ -285,7 +289,7 @@ function Index() {
             {single && (
               <section className="rounded-md border bg-card p-4">
                 <p className="kicker mb-2">{tx.ranking} · {L(single)}</p>
-                <p className="mb-2 text-xs text-muted-foreground">{en ? "Under each bar: R = residents · B = buildings · P/B = residents per building." : "Unter den Balken: E = Einwohner · G = Gebäude · E/G = Einwohner je Gebäude."}</p>
+                {features.buildings && <p className="mb-2 text-xs text-muted-foreground">{en ? "Under each bar: R = residents · B = buildings · P/B = residents per building." : "Unter den Balken: E = Einwohner · G = Gebäude · E/G = Einwohner je Gebäude."}</p>}
                 <ul className="space-y-1">
                   {sorted.map((d) => {
                     const v = value(d, single);

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useLang, t } from "@/lib/i18n";
+import { MunicipalitySwitcher } from "@/components/MunicipalitySwitcher";
 
 export function SiteHeader() {
   const [lang, setLang] = useLang();
@@ -11,7 +12,8 @@ export function SiteHeader() {
           <span className="font-display text-2xl font-bold uppercase text-primary">Housing Radar</span>
           <span className="kicker hidden sm:inline">{tx.city}</span>
         </Link>
-        <nav className="flex gap-1 text-sm">
+        <nav className="flex items-center gap-1 text-sm">
+          {import.meta.env.DEV && <MunicipalitySwitcher />}
           <Link to="/" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }} activeOptions={{ exact: true }}>{tx.map}</Link>
           <Link to="/quellen" className="rounded-sm px-3 py-1.5 hover:bg-muted" activeProps={{ className: "bg-muted font-medium" }}>{tx.sources}</Link>
           <div className="ml-2 flex overflow-hidden rounded-sm border" role="group" aria-label="Sprache / Language">

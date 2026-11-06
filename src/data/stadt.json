@@ -1,0 +1,23 @@
+{
+  "name": "Lüneburg",
+  "ags": "03355022",
+  "state": "Niedersachsen",
+  "labelDe": "Hansestadt Lüneburg",
+  "labelEn": "Hanseatic City of Lüneburg",
+  "avgDe": "Lüneburger Schnitt",
+  "avgLongDe": "Lüneburger Durchschnitt",
+  "datasetsDe": "Neun Datensätze",
+  "datasetsEn": "Nine datasets",
+  "center": [53.245, 10.41],
+  "defaultDistrict": "Wilschenbruch",
+  "commercialDistrict": "Altstadt",
+  "partnerDe": "z. B. zusammen mit der Leuphana und dem Studierendenwerk",
+  "partnerEn": "e.g. together with the university and student services",
+  "officialBuildings": true,
+  "breaks": {},
+  "thresholds": {},
+  "features": { "amenities": true, "buildings": true, "coverage": true, "landuse": true, "nature": true, "flood": true, "fnp": true, "commercial": true },
+  "sources": null,
+  "limits": null,
+  "steps": null
+}

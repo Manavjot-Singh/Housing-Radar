@@ -1,3 +1,5 @@
+import { city } from "@/lib/radar";
+
 // Rule-based "what the city can do" ideas, driven by whatever figures exist for a place.
 // Each district is compared with the city, so ideas change whenever the place changes.
 
@@ -27,8 +29,8 @@ export function recommend(p: Profile, ref: Profile): Idea[] {
 
   if (olderMany && (spacious || houses)) out.push({
     id: "wohnenFuerHilfe",
-    de: { title: "Wohnen für Hilfe", text: "Ältere Menschen mit großen Häusern vermieten ein Zimmer günstig an Studierende oder Auszubildende, die dafür im Haushalt oder Garten helfen. Die Stadt vermittelt, z. B. zusammen mit der Leuphana und dem Studierendenwerk." },
-    en: { title: "Homeshare (housing for help)", text: "Older people with large houses rent a room cheaply to students or trainees, who help in the house or garden in return. The city brokers matches, e.g. together with the university and student services." },
+    de: { title: "Wohnen für Hilfe", text: `Ältere Menschen mit großen Häusern vermieten ein Zimmer günstig an Studierende oder Auszubildende, die dafür im Haushalt oder Garten helfen. Die Stadt vermittelt${city.partnerDe ? `, ${city.partnerDe}` : ""}.` },
+    en: { title: "Homeshare (housing for help)", text: `Older people with large houses rent a room cheaply to students or trainees, who help in the house or garden in return. The city brokers matches${city.partnerEn ? `, ${city.partnerEn}` : ""}.` },
   });
   if (olderMany && houses) out.push({
     id: "umzugsBoerse",

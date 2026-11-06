@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
-import { sources } from "@/lib/radar";
+import { city, sources } from "@/lib/radar";
 import { useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/quellen")({
   head: () => ({
     meta: [
-      { title: "Quellen & Methode – Housing Radar Lüneburg" },
+      { title: `Quellen & Methode – Housing Radar ${city.name}` },
       { name: "description", content: "Welche offenen Daten der Housing Radar nutzt, wie sie zusammengeführt werden und wo ihre Grenzen liegen." },
-      { property: "og:title", content: "Quellen & Methode – Housing Radar Lüneburg" },
+      { property: "og:title", content: `Quellen & Methode – Housing Radar ${city.name}` },
       { property: "og:description", content: "Lizenzen, räumliche Ebene, Aktualität und Datenlücken der verwendeten Quellen." },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
@@ -74,8 +74,8 @@ const limitsEn = [
 function Quellen() {
   const [lang] = useLang();
   const en = lang === "en";
-  const steps = en ? stepsEn : stepsDe;
-  const limits = en ? limitsEn : limitsDe;
+  const steps = city.steps?.[en ? "en" : "de"] ?? (en ? stepsEn : stepsDe);
+  const limits = city.limits?.[en ? "en" : "de"] ?? (en ? limitsEn : limitsDe);
   return (
     <div className="min-h-screen">
       <SiteHeader />

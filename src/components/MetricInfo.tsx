@@ -1,4 +1,8 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { city } from "@/lib/radar";
+
+const footprintsDe = city.officialBuildings ? "Amtliche Gebäudegrundrisse" : "OpenStreetMap-Gebäude";
+const footprintsEn = city.officialBuildings ? "Official building footprints" : "OpenStreetMap buildings";
 
 export type MetricKey = "living" | "vacancy" | "old" | "efh" | "rooms" | "amen" | "density" | "coverage" | "residents" | "buildings" | "perBuilding";
 
@@ -28,15 +32,15 @@ export const METRIC_INFO: Record<MetricKey, { de: string; en: string }> = {
     en: "OpenStreetMap: each square is checked for a supermarket (≤ 600 m), a bakery (≤ 600 m), a doctor (≤ 600 m) and a bus/rail stop (≤ 400 m), each as a walking route over OpenStreetMap streets and paths, Only the amenities ticked above count (none ticked = all four); the value is the share of them within walking distance in %, resident-weighted.",
   },
   density: {
-    de: "LGLN ALKIS-Hausumringe: Grundfläche aller Gebäude im Stadtteil ÷ Fläche des Stadtteils × 100.",
-    en: "LGLN ALKIS building footprints: total footprint of all buildings in the district ÷ district area × 100.",
+    de: `${footprintsDe}: Grundfläche aller Gebäude im Stadtteil ÷ Fläche des Stadtteils × 100.`,
+    en: `${footprintsEn}: total footprint of all buildings in the district ÷ district area × 100.`,
   },
   coverage: {
     de: "Anteil der Einwohner des Stadtteils, die in Quadraten mit veröffentlichtem Leerstandswert wohnen. Niedrig = Leerstandswert unsicher.",
     en: "Share of the district's residents living in squares with a published vacancy value. Low = vacancy figure is uncertain.",
   },
   residents: { de: "Zensus 2022: Summe der Einwohner aller 100-m-Quadrate, deren Mittelpunkt im Stadtteil liegt.", en: "Census 2022: sum of residents of all 100 m squares whose centre lies in the district." },
-  buildings: { de: "LGLN ALKIS-Hausumringe: Anzahl aller Gebäude, deren Mittelpunkt im Stadtteil liegt (inkl. Garagen, Schuppen).", en: "LGLN ALKIS footprints: number of all buildings whose centre lies in the district (incl. garages, sheds)." },
+  buildings: { de: `${footprintsDe}: Anzahl aller Gebäude, deren Mittelpunkt im Stadtteil liegt (inkl. Garagen, Schuppen).`, en: `${footprintsEn}: number of all buildings whose centre lies in the district (incl. garages, sheds).` },
   perBuilding: { de: "Einwohner ÷ Gebäude. Niedrig = viel bebaute Fläche je Person.", en: "Residents ÷ buildings. Low = lots of built space per person." },
 };
 

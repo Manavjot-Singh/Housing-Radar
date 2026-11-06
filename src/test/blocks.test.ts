@@ -1,3 +1,4 @@
+import { city } from "@/lib/radar";
 import { describe, expect, it } from "vitest";
 
 import gitter from "@/data/gitter.json";
@@ -7,7 +8,7 @@ const cells = gitter as unknown as Cell[];
 
 // The app re-derives the block of a cell from its coordinates, so the tile formula in
 // radar.ts must match the one in scripts/prepare_blocks.py.
-describe("500 m blocks", () => {
+describe.skipIf(city.name !== "Lüneburg")("500 m blocks", () => {
   it("gives every grid cell a block in the same district", () => {
     for (const c of cells) {
       const b = blockOf(c);

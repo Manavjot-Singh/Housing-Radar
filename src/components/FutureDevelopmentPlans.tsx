@@ -4,6 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_THRESHOLDS, evaluate, futureBlocks, edgeSuggestions, type Thresholds } from "@/lib/future";
 import { useLang } from "@/lib/i18n";
+import { features } from "@/lib/radar";
 
 export function FutureDevelopmentPlans() {
   const [lang] = useLang();
@@ -21,8 +22,16 @@ export function FutureDevelopmentPlans() {
   const sliders: { key: "living" | "vacancy" | "coverage"; label: string; min: number; max: number; step: number; show: string }[] = [
     { key: "living", label: en ? "Living space per resident below" : "Wohnfläche je Einwohner unter", min: 30, max: 70, step: 1, show: `${t.living} m²` },
     { key: "vacancy", label: en ? "Vacancy at most" : "Leerstand höchstens", min: 0, max: 25, step: 0.5, show: `${t.vacancy} %` },
-    { key: "coverage", label: en ? "Building coverage at most" : "Bebauung höchstens", min: 1, max: 40, step: 1, show: `${t.coverage} %` },
+    { key: "coverage" as const, label: en ? "Building coverage at most" : "Bebauung höchstens", min: 1, max: 40, step: 1, show: `${t.coverage} %` },
+  ].filter((s) => features.coverage || s.key !== "coverage");
+
+  // The text names only the exclusions and the plan data this city really has.
+  const excl: [boolean, string, string][] = [
+    [features.nature, "nature reserves, landscape protection areas", "Naturschutzgebiete, Landschaftsschutzgebiete"],
+    [features.flood, "flood zones", "Überschwemmungsgebiete"],
+    [features.landuse, "forests, cemeteries, allotments, car parks and parks/sports grounds", "Wald, Friedhöfe, Kleingärten, Parkplätze sowie Parks und Sportflächen"],
   ];
+  const exclText = excl.filter(([on]) => on).map(([, e, d]) => (en ? e : d)).join(en ? ", " : ", ");
 
   return (
     <section className="mt-10 rounded-md border bg-card p-4 sm:p-6" aria-labelledby="future-development-title">
@@ -32,8 +41,8 @@ export function FutureDevelopmentPlans() {
       </h2>
       <p className="mt-2 max-w-4xl text-sm text-muted-foreground">
         {en
-          ? "Search areas on ~500 m blocks: high housing pressure (little living space, low vacancy) combined with little building on the remaining land. Nature reserves, landscape protection areas, flood zones, forests, cemeteries, allotments, car parks and parks/sports grounds are subtracted first; farmland stays (it is where new housing areas are usually zoned). Blue dashed areas are housing or mixed land in the city land-use plan (Flächennutzungsplan) that is still unbuilt. Move the sliders – the map recalculates instantly, so you can see how stable a result is."
-          : "Suchräume auf ~500-m-Blöcken: hoher Wohnungsdruck (wenig Wohnfläche, wenig Leerstand) und wenig Bebauung auf der verbleibenden Fläche. Vorher abgezogen werden Naturschutzgebiete, Landschaftsschutzgebiete, Überschwemmungsgebiete, Wald, Friedhöfe, Kleingärten, Parkplätze sowie Parks und Sportflächen; Ackerflächen bleiben (dort werden neue Baugebiete meist ausgewiesen). Blau gestrichelt: im Flächennutzungsplan ausgewiesene Wohn- oder Mischbauflächen, die noch unbebaut sind. Verschiebe die Regler – die Karte rechnet sofort neu, so siehst du, wie stabil ein Ergebnis ist."}
+          ? `Search areas on ~500 m blocks: high housing pressure (little living space, low vacancy)${features.coverage ? " combined with little building on the remaining land" : ""}.${exclText ? ` Subtracted first: ${exclText}; farmland stays (it is where new housing areas are usually zoned).` : ""}${features.fnp ? " Blue dashed areas are housing or mixed land in the city land-use plan (Flächennutzungsplan) that is still unbuilt." : ""} Move the sliders – the map recalculates instantly, so you can see how stable a result is.`
+          : `Suchräume auf ~500-m-Blöcken: hoher Wohnungsdruck (wenig Wohnfläche, wenig Leerstand)${features.coverage ? " und wenig Bebauung auf der verbleibenden Fläche" : ""}.${exclText ? ` Vorher abgezogen werden ${exclText}; Ackerflächen bleiben (dort werden neue Baugebiete meist ausgewiesen).` : ""}${features.fnp ? " Blau gestrichelt: im Flächennutzungsplan ausgewiesene Wohn- oder Mischbauflächen, die noch unbebaut sind." : ""} Verschiebe die Regler – die Karte rechnet sofort neu, so siehst du, wie stabil ein Ergebnis ist.`}
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -50,10 +59,10 @@ export function FutureDevelopmentPlans() {
           <b>{hits.length}</b> {en ? "blocks" : "Blöcke"} · <b>{fmt(ha)} ha</b> {en ? "remaining area" : "verbleibende Fläche"}
           {districts.length > 0 && <span className="text-muted-foreground"> · {districts.join(", ")}</span>}
         </span>
-        <label className="flex items-center gap-2">
+        {features.fnp && <label className="flex items-center gap-2">
           <input type="checkbox" checked={t.onlyPlanned} onChange={(e) => setT((p) => ({ ...p, onlyPlanned: e.target.checked }))} />
           {en ? "Only blocks with housing land in the land-use plan" : "Nur Blöcke mit Wohnbaufläche im Flächennutzungsplan"}
-        </label>
+        </label>}
         <Button variant="outline" size="sm" onClick={() => setT(DEFAULT_THRESHOLDS)}>{en ? "Reset" : "Zurücksetzen"}</Button>
       </div>
 
@@ -72,14 +81,14 @@ export function FutureDevelopmentPlans() {
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           {en
-            ? "Only blocks on the city edge count. A block qualifies if it meets all conditions above or holds still-unbuilt housing land from the land-use plan (both after exclusions). The three districts with the most such area are suggested and their blocks outlined in red on the map. Changes with the sliders."
-            : "Gezählt werden nur Blöcke am Stadtrand. Ein Block zählt, wenn er alle Bedingungen oben erfüllt oder noch unbebaute Wohnbaufläche aus dem Flächennutzungsplan enthält (beides nach Abzug der Ausschlussflächen). Vorgeschlagen werden die drei Stadtteile mit der meisten solchen Fläche; ihre Blöcke sind auf der Karte rot umrandet. Ändert sich mit den Reglern."}
+            ? `Only blocks on the city edge count. A block qualifies if it meets all conditions above${features.fnp ? " or holds still-unbuilt housing land from the land-use plan (both after exclusions)" : ""}. The three districts with the most such area are suggested and their blocks outlined in red on the map. Changes with the sliders.`
+            : `Gezählt werden nur Blöcke am Stadtrand. Ein Block zählt, wenn er alle Bedingungen oben erfüllt${features.fnp ? " oder noch unbebaute Wohnbaufläche aus dem Flächennutzungsplan enthält (beides nach Abzug der Ausschlussflächen)" : ""}. Vorgeschlagen werden die drei Stadtteile mit der meisten solchen Fläche; ihre Blöcke sind auf der Karte rot umrandet. Ändert sich mit den Reglern.`}
         </p>
       </div>
       <p className="mt-3 border-l-2 border-primary bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         {en
-          ? "Green = all conditions met; hover any block to see ✔/✘ per condition and what was subtracted. Where the census hides a block's value for privacy, the district value is used and marked. Building coverage comes from OpenStreetMap footprints and refers to the land left after exclusions. These are search areas, not buildable plots: zoning, ownership, Natura 2000 and infrastructure are not checked – confirm every site in the Geoportal and binding plans."
-          : "Grün = alle Bedingungen erfüllt; beim Überfahren zeigt jeder Block ✔/✘ je Bedingung und was abgezogen wurde. Wo der Zensus den Blockwert aus Datenschutzgründen verbirgt, gilt der Stadtteilwert (markiert). Die Bebauung stammt aus OpenStreetMap-Gebäudeumrissen und bezieht sich auf die Fläche nach Abzug. Das sind Suchräume, keine Baugrundstücke: Bauleitplanung, Eigentum, Natura 2000 und Infrastruktur sind nicht geprüft – jeden Standort im Geoportal und anhand der verbindlichen Pläne kontrollieren."}
+          ? `Green = all conditions met; hover any block to see ✔/✘ per condition and what was subtracted. Where the census hides a block's value for privacy, the district value is used and marked.${features.coverage ? " Building coverage comes from OpenStreetMap footprints and refers to the land left after exclusions." : ""} These are search areas, not buildable plots: zoning, ownership, Natura 2000 and infrastructure are not checked – confirm every site in the Geoportal and binding plans.`
+          : `Grün = alle Bedingungen erfüllt; beim Überfahren zeigt jeder Block ✔/✘ je Bedingung und was abgezogen wurde. Wo der Zensus den Blockwert aus Datenschutzgründen verbirgt, gilt der Stadtteilwert (markiert).${features.coverage ? " Die Bebauung stammt aus OpenStreetMap-Gebäudeumrissen und bezieht sich auf die Fläche nach Abzug." : ""} Das sind Suchräume, keine Baugrundstücke: Bauleitplanung, Eigentum, Natura 2000 und Infrastruktur sind nicht geprüft – jeden Standort im Geoportal und anhand der verbindlichen Pläne kontrollieren.`}
       </p>
     </section>
   );
